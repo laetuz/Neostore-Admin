@@ -1,5 +1,8 @@
-package id.neotica.neostore.admin.data
+package id.neotica.neostore.admin.data.remote
 
+import id.neotica.neostore.admin.data.ktorClient
+import id.neotica.neostore.admin.domain.remote.FileRepository
+import io.ktor.client.HttpClient
 import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
@@ -13,7 +16,9 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.jvm.javaio.toByteReadChannel
 import java.io.File
 
-class FileRepositoryImpl: FileRepository {
+class FileRepositoryImpl(
+    private val httpClient: HttpClient,
+): FileRepository {
     private val LARGE_FILE_THRESHOLD = 50 * 1024 * 1024L
 
     override suspend fun uploadFile(
@@ -39,7 +44,7 @@ class FileRepositoryImpl: FileRepository {
         s3Path: String,
         onProgress: (Float) -> Unit
     ): Result<String> {
-        val response = ktorClient.post("$s3Path/raw") {
+        val response = httpClient.post("$s3Path/raw") {
 
             // Stream directly from disk
             setBody(file.readChannel())
@@ -52,7 +57,7 @@ class FileRepositoryImpl: FileRepository {
             }
         }
 
-        return if (response.status == HttpStatusCode.OK) {
+        return if (response.status == HttpStatusCode.Companion.OK) {
             Result.success(response.bodyAsText())
         } else {
             Result.failure(Exception("Raw Upload Failed: ${response.status}"))
@@ -73,7 +78,10 @@ class FileRepositoryImpl: FileRepository {
                             append(HttpHeaders.ContentType, "application/octet-stream")
 
                             val fileName = "$apkPath/${file.name}"
-                            append(HttpHeaders.ContentDisposition, "form-data; name=\"file\"; filename=\"${fileName}\"")
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                "form-data; name=\"file\"; filename=\"${fileName}\""
+                            )
                         })
                     }
                 )

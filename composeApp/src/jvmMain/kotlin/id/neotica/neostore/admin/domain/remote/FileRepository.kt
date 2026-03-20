@@ -1,4 +1,4 @@
-package id.neotica.neostore.admin.data
+package id.neotica.neostore.admin.domain.remote
 
 import java.io.File
 

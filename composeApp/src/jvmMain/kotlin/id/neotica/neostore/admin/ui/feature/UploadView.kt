@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCard
+import id.neotica.neostore.admin.ui.components.PurpleGrey40
 import org.koin.compose.viewmodel.koinViewModel
 import java.awt.datatransfer.DataFlavor
 import java.io.File
@@ -135,7 +136,13 @@ fun UploadView(
             },
             label = {
                 Text(
-                    text = "Apk Folder"
+                    text = "Package Name"
+                )
+            },
+            placeholder = {
+                Text(
+                    text = "id.neotica.something",
+                    color = PurpleGrey40
                 )
             }
         )

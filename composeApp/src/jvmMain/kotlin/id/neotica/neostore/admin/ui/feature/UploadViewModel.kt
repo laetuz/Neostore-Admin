@@ -2,8 +2,8 @@ package id.neotica.neostore.admin.ui.feature
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.neotica.neostore.admin.data.FileRepository
-import id.neotica.neostore.admin.utils.Constants.BASE_URL
+import id.neotica.neostore.admin.domain.remote.FileRepository
+import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -48,7 +48,7 @@ class UploadViewModel(
             it.copy(isLoading = true, statusMessage = "Starting upload...", uploadProgress = 0f)
         }
 
-        val baseUrl = "$BASE_URL/${target.label}"
+        val baseUrl = "$BASE_URL_BUCKET/${target.label}"
 
         viewModelScope.launch {
             val result = repository.uploadFile(file, baseUrl, currentState.apkFileFolder) { progress ->
@@ -78,7 +78,5 @@ data class UploadUiState(
 )
 
 enum class TargetUpload(val label: String) {
-    NEOTICA_ASSETS("neotica-assets"),
-    NEOMART("neomart"),
     NEOSTORE("neostore")
 }

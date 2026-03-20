@@ -56,14 +56,17 @@ buildConfig {
     val properties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
 
-    val baseUrl = if (localPropertiesFile.exists()) {
-        properties.load(localPropertiesFile.inputStream())
-        properties.getProperty("BASE_URL") ?: ""
-    } else {
-        System.getenv("BASE_URL") ?: ""
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { properties.load(it) }
     }
 
-    val cleanUrl = baseUrl.removeSurrounding("\"").removeSurrounding("'")
+    fun getCleanConfig(key: String): String {
+        val rawValue = properties.getProperty(key) ?: System.getenv(key) ?: ""
 
-    buildConfigField("String", "BASE_URL", "\"$cleanUrl\"")
+        val cleanValue = rawValue.removeSurrounding("\"").removeSurrounding("'")
+        return "\"$cleanValue\""
+    }
+
+    buildConfigField("String", "BASE_URL", getCleanConfig("BASE_URL"))
+    buildConfigField("String", "BASE_URL_BUCKET", getCleanConfig("BASE_URL_BUCKET"))
 }
