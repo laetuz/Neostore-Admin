@@ -1,4 +1,4 @@
-package id.neotica.neostore.admin.ui.feature
+package id.neotica.neostore.admin.ui.feature.upload
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -129,22 +129,47 @@ fun UploadView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TextField(
+                value = uiState.apkFileFolder,
+                onValueChange = { viewModel.setApkFileFolder(it) },
+                label = { Text("Package Name") },
+                placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
+                modifier = Modifier.weight(2f),
+                singleLine = true
+            )
+
+            TextField(
+                value = uiState.versionName,
+                onValueChange = { viewModel.setVersionName(it) },
+                label = { Text("Version Name") },
+                placeholder = { Text("0.0.20", color = PurpleGrey40) },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+
+            TextField(
+                value = uiState.versionCode,
+                onValueChange = { viewModel.setVersionCode(it) },
+                label = { Text("Version Code") },
+                placeholder = { Text("1", color = PurpleGrey40) },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         TextField(
-            value = uiState.apkFileFolder,
-            onValueChange = {
-                viewModel.setApkFileFolder(it)
-            },
-            label = {
-                Text(
-                    text = "Package Name"
-                )
-            },
-            placeholder = {
-                Text(
-                    text = "id.neotica.something",
-                    color = PurpleGrey40
-                )
-            }
+            value = uiState.changelog,
+            onValueChange = { viewModel.setChangelog(it) },
+            label = { Text("Changelog") },
+            placeholder = { Text("Initial release with checkout support!", color = PurpleGrey40) },
+            modifier = Modifier.fillMaxWidth().height(100.dp),
+            maxLines = 4
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -199,7 +224,7 @@ fun UploadView(
                         modifier = Modifier.padding(top = 8.dp)
                     ) {
                         ButtonBasic("Upload") {
-                            viewModel.upload(targetSite)
+                            viewModel.upload()
                         }
                         ButtonBasic("Clear") {
                             viewModel.clear()

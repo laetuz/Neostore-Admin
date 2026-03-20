@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
-import id.neotica.neostore.admin.ui.feature.UploadView
+import id.neotica.neostore.admin.ui.feature.upload.UploadView
 
 @Composable
 fun MainView(

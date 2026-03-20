@@ -6,7 +6,7 @@ import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.data.remote.FileRepositoryImpl
 import id.neotica.neostore.admin.domain.local.TokenStorage
 import id.neotica.neostore.admin.domain.remote.AuthRepository
-import id.neotica.neostore.admin.ui.feature.UploadViewModel
+import id.neotica.neostore.admin.ui.feature.upload.UploadViewModel
 import id.neotica.neostore.admin.ui.feature.auth.LoginViewModel
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
