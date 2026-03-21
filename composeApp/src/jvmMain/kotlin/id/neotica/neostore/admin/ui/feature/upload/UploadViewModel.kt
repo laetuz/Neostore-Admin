@@ -60,7 +60,7 @@ class UploadViewModel(
             }
 
             uploadResult.onSuccess {
-                val fileUrl = "/buckets/neostore/${currentState.apkFileFolder}/${file.name}"
+                val fileUrl = "/buckets/neostore/${currentState.apkFileFolder}/${currentState.versionCode}.apk"
 
                 _uiState.update {
                     it.copy(statusMessage = "Upload Success! ✅", uploadProgress = 1f, isLoading = false)

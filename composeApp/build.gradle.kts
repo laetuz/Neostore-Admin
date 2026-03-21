@@ -44,8 +44,12 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "id.neotica.neostore.admin"
+            packageName = "Neostore Admin"
             packageVersion = "1.0.0"
+
+            macOS {
+                iconFile.set { rootProject.file("media/neostore-admin.icns") }
+            }
         }
     }
 }
