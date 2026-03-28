@@ -33,6 +33,23 @@ class UploadViewModel(
     fun setVersionName(name: String) = _uiState.update { it.copy(versionName = name) }
     fun setVersionCode(code: String) = _uiState.update { it.copy(versionCode = code.filter { char -> char.isDigit() }) } // Force numbers only
     fun setChangelog(log: String) = _uiState.update { it.copy(changelog = log) }
+    fun setMinSdk(minSdk: String) = _uiState.update { it.copy(minSdk = minSdk.filter { char -> char.isDigit() }) }
+
+    fun setMaxSdk(maxSdk: String) = _uiState.update { it.copy(maxSdk = maxSdk.filter { char -> char.isDigit() }) }
+
+    fun checkLatestVersion() = viewModelScope.launch {
+        val result = repository.checkLatestVersion(_uiState.value.apkFileFolder)
+
+        result.onSuccess { data ->
+            _uiState.update { it.copy(
+                versionName = data.versionName,
+                minSdk = data.minSdk.toString(),
+                maxSdk = data.maxSdk.toString(),
+                versionCode = data.versionCode.toString(),
+                changelog = data.changelog
+            ) }
+        }
+    }
 
     fun upload() {
         val currentState = _uiState.value
@@ -55,7 +72,12 @@ class UploadViewModel(
         val bucketUrl = "$BASE_URL_BUCKET/neostore"
 
         viewModelScope.launch {
-            val uploadResult = repository.uploadFile(file, bucketUrl, currentState.apkFileFolder, currentState.versionCode.toInt()) { progress ->
+            val uploadResult = repository.uploadFile(
+                file = file,
+                s3Path = bucketUrl,
+                apkPath = currentState.apkFileFolder,
+                versionCode = currentState.versionCode.toInt()
+            ) { progress ->
                 _uiState.update { it.copy(uploadProgress = progress) }
             }
 
@@ -71,7 +93,9 @@ class UploadViewModel(
                     versionName = currentState.versionName,
                     versionCode = currentState.versionCode.toInt(),
                     fileUrl = fileUrl,
-                    changelog = currentState.changelog
+                    changelog = currentState.changelog,
+                    minSdk = currentState.minSdk.toInt(),
+                    maxSdk = currentState.maxSdk.toInt(),
                 )
 
                 registerResult

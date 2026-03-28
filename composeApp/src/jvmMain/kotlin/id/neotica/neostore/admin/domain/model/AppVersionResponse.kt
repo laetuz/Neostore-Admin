@@ -4,7 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AppVersionRequest(
+data class AppVersionResponse(
+    val id: String,
+    @SerialName("app_id")
+    val appId: String,
     @SerialName("version_name")
     val versionName: String,
     @SerialName("version_code")
@@ -15,5 +18,7 @@ data class AppVersionRequest(
     @SerialName("min_sdk")
     val minSdk: Int,
     @SerialName("max_sdk")
-    val maxSdk: Int
+    val maxSdk: Int,
+    @SerialName("created_at")
+    val createdAt: Long
 )

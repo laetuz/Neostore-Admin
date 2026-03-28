@@ -2,12 +2,15 @@ package id.neotica.neostore.admin.data.remote
 
 import id.neotica.neostore.admin.data.ktorClient
 import id.neotica.neostore.admin.domain.model.AppVersionRequest
+import id.neotica.neostore.admin.domain.model.AppVersionResponse
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -31,7 +34,7 @@ class FileRepositoryImpl(
         s3Path: String,
         apkPath: String,
         versionCode: Int,
-        onProgress: (Float) -> Unit
+        onProgress: (Float) -> Unit,
     ): Result<String> {
         val apkPathCheck = apkPath.ifEmpty { "" }
         return try {
@@ -56,7 +59,9 @@ class FileRepositoryImpl(
         versionName: String,
         versionCode: Int,
         fileUrl: String,
-        changelog: String
+        changelog: String,
+        minSdk: Int,
+        maxSdk: Int,
     ): Result<String> {
         return try {
             val url = "$BASE_URL/neostore/admin/apps/$packageName/versions"
@@ -68,7 +73,9 @@ class FileRepositoryImpl(
                         versionName = versionName,
                         versionCode = versionCode,
                         fileUrl = fileUrl,
-                        changelog = changelog
+                        changelog = changelog,
+                        minSdk = minSdk,
+                        maxSdk = maxSdk
                     )
                 )
             }
@@ -81,6 +88,17 @@ class FileRepositoryImpl(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun checkLatestVersion(packageName: String): Result<AppVersionResponse> = try {
+        val url = "$BASE_URL/neostore/apps/$packageName/latest"
+        val response = httpClient.get(url)
+
+        if (response.status.isSuccess()) {
+            Result.success(response.body())
+        } else Result.failure(Exception(""))
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     suspend fun uploadRaw(

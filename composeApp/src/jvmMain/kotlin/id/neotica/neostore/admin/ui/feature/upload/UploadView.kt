@@ -94,38 +94,59 @@ fun UploadView(
         )
 
         // Target Selection Dropdown
-        Box(
-            modifier = Modifier
-                .clickable { dropdownExpanded = !dropdownExpanded }
-                .border(1.dp, MaterialTheme.colorScheme.primary)
-                .padding(8.dp)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Target upload: ${targetSite.label}",
-                    color = DarkPrimary
-                )
-                Text(
-                    text = if (dropdownExpanded) "⬆️" else "⬇️",
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-
-            DropdownMenu(
-                expanded = dropdownExpanded,
-                onDismissRequest = { dropdownExpanded = false }
+            Box(
+                modifier = Modifier
+                    .clickable { dropdownExpanded = !dropdownExpanded }
+                    .border(1.dp, MaterialTheme.colorScheme.primary)
+                    .padding(8.dp)
             ) {
-                TargetUpload.entries.forEach { target ->
-                    DropdownMenuItem(
-                        text = { Text(target.label) },
-                        onClick = {
-                            dropdownExpanded = false
-                            targetSite = target
-                        }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Target upload: ${targetSite.label}",
+                        color = DarkPrimary
+                    )
+                    Text(
+                        text = if (dropdownExpanded) "⬆️" else "⬇️",
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
+
+                DropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false }
+                ) {
+                    TargetUpload.entries.forEach { target ->
+                        DropdownMenuItem(
+                            text = { Text(target.label) },
+                            onClick = {
+                                dropdownExpanded = false
+                                targetSite = target
+                            }
+                        )
+                    }
+                }
             }
+            TextField(
+                value = uiState.minSdk,
+                onValueChange = { viewModel.setMinSdk(it) },
+                label = { Text("Min Sdk") },
+                placeholder = { Text("7", color = PurpleGrey40) },
+                modifier = Modifier.weight(2f),
+                singleLine = true
+            )
+            TextField(
+                value = uiState.maxSdk,
+                onValueChange = { viewModel.setMaxSdk(it) },
+                label = { Text("Max Sdk") },
+                placeholder = { Text("21", color = PurpleGrey40) },
+                modifier = Modifier.weight(2f),
+                singleLine = true
+            )
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -139,7 +160,15 @@ fun UploadView(
                 label = { Text("Package Name") },
                 placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
                 modifier = Modifier.weight(2f),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    Text(
+                        text = "Check",
+                        modifier = Modifier.clickable {
+                            viewModel.checkLatestVersion()
+                        }
+                    )
+                }
             )
 
             TextField(

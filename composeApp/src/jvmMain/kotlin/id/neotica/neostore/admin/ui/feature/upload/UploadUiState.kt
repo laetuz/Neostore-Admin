@@ -9,5 +9,7 @@ data class UploadUiState(
     val changelog: String = "",
     val installStatus: String = "",
     val statusMessage: String = "",
-    val uploadProgress: Float = 0f
+    val uploadProgress: Float = 0f,
+    val minSdk: String = "",
+    val maxSdk: String = ""
 )
