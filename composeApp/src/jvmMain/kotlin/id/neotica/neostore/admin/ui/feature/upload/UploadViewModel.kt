@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.dongliu.apk.parser.ApkFile
 import java.io.File
 
 class UploadViewModel(
@@ -16,13 +18,57 @@ class UploadViewModel(
     private val _uiState = MutableStateFlow(UploadUiState())
     val uiState = _uiState.asStateFlow()
 
-    fun clear() {
-        _uiState.update { it.copy(filePath = "", statusMessage =  "", uploadProgress =  0f) }
+    fun clear(type: ClearState) {
+        when (type) {
+            ClearState.UPLOAD -> _uiState.update { it.copy(filePath = "", statusMessage =  "", uploadProgress =  0f) }
+            ClearState.ALL -> _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    filePath = "",
+                    apkFileFolder = "",
+                    versionName = "",
+                    versionCode = "",
+                    changelog = "",
+                    installStatus = "",
+                    statusMessage =  "",
+                    uploadProgress =  0f,
+                    minSdk = "",
+                    maxSdk = ""
+                )
+            }
+        }
     }
 
     fun setPath(path: String) {
         _uiState.update {
-            it.copy(filePath = path, statusMessage = "Ready to upload", uploadProgress = 0f)
+            it.copy(filePath = path, statusMessage = "Analyzing APK...", uploadProgress = 0f)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val file = File(path)
+
+                if (file.extension.equals("apk", true)) {
+                    val apkFile = ApkFile(file)
+                    val apkMeta = apkFile.apkMeta
+
+                    _uiState.update {
+                        it.copy(
+                            apkFileFolder = apkMeta.packageName ?: it.apkFileFolder,
+                            versionName = apkMeta.versionName ?: it.versionName,
+                            versionCode = apkMeta.versionCode?.toString() ?: it.versionCode,
+                            minSdk = apkMeta.minSdkVersion ?: it.minSdk,
+                            maxSdk = apkMeta.targetSdkVersion ?: it.maxSdk,
+                            statusMessage = "APK analyzed successfully. Ready to upload."
+                        )
+                    }
+
+                    apkFile.close()
+                } else {
+                    _uiState.update { it.copy(statusMessage = "File selected. Ready to upload.") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(statusMessage = "Failed to parse APK: ${e.message}") }
+            }
         }
     }
 

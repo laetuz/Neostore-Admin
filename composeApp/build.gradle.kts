@@ -26,6 +26,7 @@ kotlin {
             implementation(libs.neotoast)
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.koin)
+            implementation("net.dongliu:apk-parser:2.6.10")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -45,7 +46,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Neostore Admin"
-            packageVersion = "1.0.0"
+            packageVersion = "1.1.0"
 
             macOS {
                 iconFile.set { rootProject.file("media/neostore-admin.icns") }

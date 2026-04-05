@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -113,21 +111,6 @@ fun UploadView(
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
-
-                DropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false }
-                ) {
-                    TargetUpload.entries.forEach { target ->
-                        DropdownMenuItem(
-                            text = { Text(target.label) },
-                            onClick = {
-                                dropdownExpanded = false
-                                targetSite = target
-                            }
-                        )
-                    }
-                }
             }
             TextField(
                 value = uiState.minSdk,
@@ -162,12 +145,12 @@ fun UploadView(
                 modifier = Modifier.weight(2f),
                 singleLine = true,
                 trailingIcon = {
-                    Text(
-                        text = "Check",
-                        modifier = Modifier.clickable {
-                            viewModel.checkLatestVersion()
+                    if (uiState.apkFileFolder.isNotEmpty()) {
+                        Row {
+                            ButtonBasic("Check") { viewModel.checkLatestVersion() }
+                            Spacer(Modifier.padding(4.dp))
                         }
-                    )
+                    }
                 }
             )
 
@@ -203,64 +186,77 @@ fun UploadView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Drag and Drop Area
-        NeoCard(
-            isDragging = isDragging,
-            dropTarget = dropTarget
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp).fillMaxWidth()
+            // Drag and Drop Area
+            NeoCard(
+                isDragging = isDragging,
+                dropTarget = dropTarget
             ) {
-                Text(
-                    text = if (uiState.filePath.isEmpty()) "Drag and drop a file here" else "File Selected",
-                    color = if (isDragging) MaterialTheme.colorScheme.primary else Color.Gray
-                )
-
-                if (uiState.filePath.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth()
+                ) {
                     Text(
-                        text = uiState.filePath,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.width(200.dp)
+                        text = if (uiState.filePath.isEmpty()) "Drag and drop a file here" else "File Selected",
+                        color = if (isDragging) MaterialTheme.colorScheme.primary else Color.Gray
                     )
-                }
 
-                if (uiState.isLoading || uiState.uploadProgress > 0f) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        LinearProgressIndicator(
-                            progress = { uiState.uploadProgress },
-                            modifier = Modifier.fillMaxWidth().height(8.dp),
-                        )
+                    if (uiState.filePath.isNotEmpty()) {
                         Text(
-                            text = "${(uiState.uploadProgress * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(top = 4.dp)
+                            text = uiState.filePath,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.width(200.dp)
                         )
                     }
-                }
 
-                if (uiState.statusMessage.isNotEmpty()) {
-                    Text(
-                        text = uiState.statusMessage,
-                        color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
-                if (uiState.filePath.isNotEmpty() && !uiState.isLoading) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        ButtonBasic("Upload") {
-                            viewModel.upload()
+                    if (uiState.isLoading || uiState.uploadProgress > 0f) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            LinearProgressIndicator(
+                                progress = { uiState.uploadProgress },
+                                modifier = Modifier.fillMaxWidth().height(8.dp),
+                            )
+                            Text(
+                                text = "${(uiState.uploadProgress * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
                         }
-                        ButtonBasic("Clear") {
-                            viewModel.clear()
+                    }
+
+                    if (uiState.statusMessage.isNotEmpty()) {
+                        Text(
+                            text = uiState.statusMessage,
+                            color = MaterialTheme.colorScheme.secondary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
+                    if (uiState.filePath.isNotEmpty() && !uiState.isLoading) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            ButtonBasic("Upload") {
+                                viewModel.upload()
+                            }
+                            ButtonBasic("Clear") {
+                                viewModel.clear(ClearState.UPLOAD)
+                            }
                         }
                     }
                 }
             }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                ButtonBasic("Clear All") { viewModel.clear(ClearState.ALL) }
+            }
+
         }
     }
 }
