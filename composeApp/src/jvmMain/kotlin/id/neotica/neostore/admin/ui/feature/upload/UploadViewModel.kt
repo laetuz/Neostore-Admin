@@ -134,7 +134,7 @@ class UploadViewModel(
                     it.copy(statusMessage = "Upload Success! ✅", uploadProgress = 1f, isLoading = false)
                 }
 
-                val registerResult = repository.registerAppVersion(
+                val registerResult = repository.publishApkVersion(
                     packageName = currentState.apkFileFolder,
                     versionName = currentState.versionName,
                     versionCode = currentState.versionCode.toInt(),

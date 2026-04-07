@@ -15,10 +15,11 @@ fun App(tokenStorage: TokenStorage = koinInject()) {
 
     Crossfade(currentScreen) {
         when (it) {
-            Screen.Main -> MainView() {
+            Screen.Main -> MainView {
                 tokenStorage.clearToken()
                 currentScreen = Screen.Auth
             }
+            Screen.RegisterApp -> {}
             else -> AuthView(
                 { currentScreen = Screen.Main }
             )

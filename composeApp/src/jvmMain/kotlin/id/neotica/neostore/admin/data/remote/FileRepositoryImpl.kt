@@ -3,6 +3,7 @@ package id.neotica.neostore.admin.data.remote
 import id.neotica.neostore.admin.data.ktorClient
 import id.neotica.neostore.admin.domain.model.AppVersionRequest
 import id.neotica.neostore.admin.domain.model.AppVersionResponse
+import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
@@ -54,7 +55,7 @@ class FileRepositoryImpl(
         }
     }
 
-    override suspend fun registerAppVersion(
+    override suspend fun publishApkVersion(
         packageName: String,
         versionName: String,
         versionCode: Int,
@@ -83,7 +84,7 @@ class FileRepositoryImpl(
             if (response.status.isSuccess()) {
                 Result.success(response.bodyAsText())
             } else {
-                Result.failure(Exception("Failed to register app version"))
+                Result.failure(Exception("Failed to publish app version"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -99,6 +100,27 @@ class FileRepositoryImpl(
         } else Result.failure(Exception(""))
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    override suspend fun registerApp(registerAppRequest: RegisterAppRequest): Result<String> {
+        return try {
+            val url = "$BASE_URL/neostore/admin/apps"
+
+            val response = httpClient.post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    registerAppRequest
+                )
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.bodyAsText())
+            } else {
+                Result.failure(Exception("Failed to register app."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun uploadRaw(

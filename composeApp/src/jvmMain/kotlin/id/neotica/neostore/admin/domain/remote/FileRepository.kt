@@ -1,6 +1,7 @@
 package id.neotica.neostore.admin.domain.remote
 
 import id.neotica.neostore.admin.domain.model.AppVersionResponse
+import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import java.io.File
 
 interface FileRepository {
@@ -11,7 +12,7 @@ interface FileRepository {
         versionCode: Int,
         onProgress: (Float) -> Unit,
     ): Result<String>
-    suspend fun registerAppVersion(
+    suspend fun publishApkVersion(
         packageName: String,
         versionName: String,
         versionCode: Int,
@@ -21,4 +22,5 @@ interface FileRepository {
         maxSdk: Int,
     ): Result<String>
     suspend fun checkLatestVersion(packageName: String): Result<AppVersionResponse>
+    suspend fun registerApp(registerAppRequest: RegisterAppRequest): Result<String>
 }

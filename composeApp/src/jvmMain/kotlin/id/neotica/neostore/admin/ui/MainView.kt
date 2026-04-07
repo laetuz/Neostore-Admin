@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,57 +21,97 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
+import id.neotica.neostore.admin.ui.feature.registerapp.RegisterAppView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
 
 @Composable
 fun MainView(
     onLogout: () -> Unit = {}
 ) {
-    var dropdownExpanded by remember { mutableStateOf(false) }
+    var screenTypeDropdownExpanded by remember { mutableStateOf(false) }
+    var moreDropdownExpanded by remember { mutableStateOf(false) }
+    var screenType by remember { mutableStateOf(MainScreenType.UPLOADER) }
 
     MaterialTheme {
         Scaffold(
             topBar = {
                 Column {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = "Neostore Admin",
-                                color = DarkPrimary
-                            )
-                        },
-                        backgroundColor = DarkBackground,
-                        actions = {
-                            Box(
-                                Modifier
-                                    .border(1.dp, DarkPrimary)
-                                    .clickable { dropdownExpanded = !dropdownExpanded }
-                            ) {
+                    Row {
+                        TopAppBar(
+                            title = {
                                 Text(
-                                    text = "More ...",
-                                    color = DarkPrimary,
-                                    modifier = Modifier.padding(8.dp)
+                                    text = "Neostore Admin",
+                                    color = DarkPrimary
                                 )
-                                DropdownMenu(
-                                    expanded = dropdownExpanded,
-                                    onDismissRequest = { dropdownExpanded = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Logout") },
-                                        onClick = {
-                                            dropdownExpanded = false
-                                            onLogout()
+                            },
+                            backgroundColor = DarkBackground,
+                            actions = {
+                                Row {
+                                    Box(
+                                        modifier = Modifier
+                                            .clickable { screenTypeDropdownExpanded = !screenTypeDropdownExpanded }
+                                            .border(1.dp, MaterialTheme.colorScheme.primary)
+                                            .padding(8.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = screenType.name,
+                                                color = DarkPrimary
+                                            )
+                                            Text(
+                                                text = if (screenTypeDropdownExpanded) "⬆️" else "⬇️",
+                                                modifier = Modifier.padding(start = 8.dp)
+                                            )
                                         }
-                                    )
+
+                                        DropdownMenu(
+                                            expanded = screenTypeDropdownExpanded,
+                                            onDismissRequest = { screenTypeDropdownExpanded = false }
+                                        ) {
+                                            MainScreenType.entries.forEach { target ->
+                                                DropdownMenuItem(
+                                                    text = { Text(target.name) },
+                                                    onClick = {
+                                                        screenTypeDropdownExpanded = false
+                                                        screenType = target
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Box(
+                                        Modifier
+                                            .border(1.dp, DarkPrimary)
+                                            .clickable { moreDropdownExpanded = !moreDropdownExpanded }
+                                    ) {
+                                        Text(
+                                            text = "More ...",
+                                            color = DarkPrimary,
+                                            modifier = Modifier.padding(8.dp)
+                                        )
+                                        DropdownMenu(
+                                            expanded = moreDropdownExpanded,
+                                            onDismissRequest = { moreDropdownExpanded = false }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Logout") },
+                                                onClick = {
+                                                    moreDropdownExpanded = false
+                                                    onLogout()
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
                             }
+                        )
+                    }
 
-                        }
-                    )
                     Divider(
                         thickness = 2.dp,
                         color = DarkPrimary
@@ -85,9 +126,17 @@ fun MainView(
                     .background(DarkBackground)
             ) {
                 item {
-                    UploadView()
+                    when (screenType) {
+                        MainScreenType.UPLOADER -> UploadView()
+                        MainScreenType.REGISTRAR -> RegisterAppView()
+                    }
                 }
             }
         }
     }
+}
+
+enum class MainScreenType {
+    UPLOADER,
+    REGISTRAR
 }
