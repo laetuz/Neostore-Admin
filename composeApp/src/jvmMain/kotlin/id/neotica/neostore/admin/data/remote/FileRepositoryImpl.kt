@@ -55,6 +55,34 @@ class FileRepositoryImpl(
         }
     }
 
+    override suspend fun uploadIcon(
+        file: File,
+        s3Path: String,
+        apkPath: String
+    ): Result<String> {
+        return try {
+            val response = httpClient.post("$s3Path/upload/form") {
+                setBody(
+                    MultiPartFormDataContent(
+                        formData {
+                            append("file", file.readBytes(), Headers.build {
+                                append(HttpHeaders.ContentType, "image/png")
+
+                                val fileName = "$apkPath/icon.jpg"
+                                append(HttpHeaders.ContentDisposition, "form-data; name=\"file\"; filename=\"${fileName}\"")
+                            })
+                        }
+                    )
+                )
+            }
+            if (response.status == HttpStatusCode.OK) {
+                Result.success(response.bodyAsText())
+            } else Result.failure(Exception("Icon upload failed: ${response.status}"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun publishApkVersion(
         packageName: String,
         versionName: String,

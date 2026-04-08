@@ -12,6 +12,7 @@ interface FileRepository {
         versionCode: Int,
         onProgress: (Float) -> Unit,
     ): Result<String>
+    suspend fun uploadIcon(file: File, s3Path: String, apkPath: String): Result<String>
     suspend fun publishApkVersion(
         packageName: String,
         versionName: String,

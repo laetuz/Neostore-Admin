@@ -7,5 +7,7 @@ data class RegisterAppUiState(
     val title: String = "",
     val description: String = "",
     val category: String = "",
-    val iconUrl: String = ""
+    val iconUrl: String = "",
+    val statusMessage: String = "",
+    val iconByteArray: ByteArray? = null,
 )

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -30,12 +29,10 @@ import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCard
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
-import id.neotica.neostore.admin.ui.feature.upload.ClearState
 import org.koin.compose.viewmodel.koinViewModel
 import java.awt.datatransfer.DataFlavor
 import java.io.File
@@ -72,7 +69,7 @@ fun RegisterAppView(
                     val file = files.firstOrNull() as? File
 
                     if (file != null) {
-//                        viewModel.setPath(file.absolutePath)
+                        viewModel.setPath(file.absolutePath)
                         return true
                     }
                 }
@@ -190,28 +187,15 @@ fun RegisterAppView(
                         )
                     }
 
-//                    if (uiState.isLoading || uiState.uploadProgress > 0f) {
-//                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-//                            LinearProgressIndicator(
-//                                progress = { uiState.uploadProgress },
-//                                modifier = Modifier.fillMaxWidth().height(8.dp),
-//                            )
-//                            Text(
-//                                text = "${(uiState.uploadProgress * 100).toInt()}%",
-//                                style = MaterialTheme.typography.labelSmall,
-//                                modifier = Modifier.padding(top = 4.dp)
-//                            )
-//                        }
-//                    }
 
-//                    if (uiState.statusMessage.isNotEmpty()) {
-//                        Text(
-//                            text = uiState.statusMessage,
-//                            color = MaterialTheme.colorScheme.secondary,
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            modifier = Modifier.padding(vertical = 8.dp)
-//                        )
-//                    }
+                    if (uiState.statusMessage.isNotEmpty()) {
+                        Text(
+                            text = uiState.statusMessage,
+                            color = MaterialTheme.colorScheme.secondary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
 
                     if (uiState.filePath.isNotEmpty() && !uiState.isLoading) {
                         Row(
@@ -220,6 +204,7 @@ fun RegisterAppView(
                         ) {
                             ButtonBasic("Upload") {
 //                                viewModel.upload()
+                                viewModel.register()
                             }
                             ButtonBasic("Clear") {
 //                                viewModel.clear(ClearState.UPLOAD)
@@ -233,7 +218,9 @@ fun RegisterAppView(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                ButtonBasic("Clear All") { /*viewModel.clear(ClearState.ALL)*/ }
+                ButtonBasic("Clear All") { viewModel.clear() }
+                ButtonBasic("Register") { viewModel.register() }
+                ButtonBasic("Download") { viewModel.exportIcon() }
             }
 
         }
