@@ -4,6 +4,8 @@ import id.neotica.neostore.admin.data.ktorClient
 import id.neotica.neostore.admin.domain.model.AppVersionRequest
 import id.neotica.neostore.admin.domain.model.AppVersionResponse
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
+import id.neotica.neostore.admin.domain.model.UpdateAppRequest
+import id.neotica.neostore.admin.domain.model.response.AppDetailResponse
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
@@ -13,6 +15,7 @@ import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -149,6 +152,36 @@ class FileRepositoryImpl(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun updateApp(packageName: String, updateAppRequest: UpdateAppRequest): Result<String> {
+        return try {
+            val url = "$BASE_URL/neostore/admin/apps/${packageName}"
+
+            val response = httpClient.put(url) {
+                contentType(ContentType.Application.Json)
+                setBody(updateAppRequest)
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.bodyAsText())
+            } else {
+                Result.failure(Exception("Failed to register app."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getAppDetail(packageName: String): Result<AppDetailResponse> = try {
+        val url = "$BASE_URL/neostore/apps/$packageName"
+        val response = httpClient.get(url)
+
+        if (response.status.isSuccess()) {
+            Result.success(response.body())
+        } else Result.failure(Exception(""))
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     suspend fun uploadRaw(

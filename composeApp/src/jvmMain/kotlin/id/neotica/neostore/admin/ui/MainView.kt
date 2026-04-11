@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.feature.registerapp.RegisterAppView
+import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
 
 @Composable
@@ -129,6 +130,7 @@ fun MainView(
                     when (screenType) {
                         MainScreenType.UPLOADER -> UploadView()
                         MainScreenType.REGISTRAR -> RegisterAppView()
+                        MainScreenType.UPDATER -> UpdateAppView()
                     }
                 }
             }
@@ -138,5 +140,6 @@ fun MainView(
 
 enum class MainScreenType {
     UPLOADER,
-    REGISTRAR
+    REGISTRAR,
+    UPDATER
 }
