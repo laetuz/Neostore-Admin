@@ -11,5 +11,10 @@ data class UploadUiState(
     val statusMessage: String = "",
     val uploadProgress: Float = 0f,
     val minSdk: String = "",
-    val maxSdk: String = ""
+    val maxSdk: String = "",
+    // Added for Auto-Registration Fallback
+    val title: String = "",
+    val description: String = "",
+    val category: String = "APPLICATION", // Defaulting to APPLICATION
+    val iconByteArray: ByteArray? = null
 )

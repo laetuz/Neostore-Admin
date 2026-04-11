@@ -111,17 +111,12 @@ class RegisterAppViewModel(
         viewModelScope.launch {
             val bucketUrl = "$BASE_URL_BUCKET/neostore"
 
-            val finalIconUrl = if (currentState.iconByteArray != null) {
-                "/buckets/neostore/${currentState.packageName}/icon.png"
-            } else ""
-
             // Register the app first
             val registerRequest = RegisterAppRequest(
                 packageName = currentState.packageName,
                 title = currentState.title,
                 description = currentState.description,
                 category = currentState.category,
-                iconUrl = finalIconUrl
             )
 
             val registerResult = repo.registerApp(registerRequest)

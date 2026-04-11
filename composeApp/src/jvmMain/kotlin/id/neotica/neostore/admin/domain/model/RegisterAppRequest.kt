@@ -9,7 +9,5 @@ data class RegisterAppRequest(
     val packageName: String,
     val title: String,
     val description: String,
-    val category: String = "",
-    @SerialName("icon_url")
-    val iconUrl: String = ""
+    val category: String = ""
 )
