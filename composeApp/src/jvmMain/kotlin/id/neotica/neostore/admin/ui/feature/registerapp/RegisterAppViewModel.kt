@@ -44,6 +44,7 @@ class RegisterAppViewModel(
                     it.copy(
                         packageName = apkMeta.packageName ?: it.packageName,
                         title = apkMeta.label ?: it.title,
+                        description = apkMeta.label,
                         iconByteArray = iconData,
                         statusMessage = "APK Analyzed. Icon saved to Downloads."
                     )

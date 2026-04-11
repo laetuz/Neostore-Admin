@@ -1,7 +1,7 @@
 package id.neotica.neostore.admin.ui.feature.registerapp
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +28,7 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.ButtonBasic
@@ -43,9 +45,7 @@ fun RegisterAppView(
     viewModel: RegisterAppViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
     var isDragging by remember { mutableStateOf(false) }
-    var dropdownExpanded by remember { mutableStateOf(false) }
 
     val dropTarget = remember {
         object : DragAndDropTarget {
@@ -87,45 +87,34 @@ fun RegisterAppView(
             color = DarkPrimary
         )
 
-        // Target Selection Dropdown
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .clickable { dropdownExpanded = !dropdownExpanded }
-                    .border(1.dp, MaterialTheme.colorScheme.primary)
-                    .padding(8.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            if (uiState.iconByteArray != null) {
+                val bitmap = remember(uiState.iconByteArray) {
+                    loadImageBitmap(uiState.iconByteArray!!.inputStream())
+                }
+
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = "Extracted App Icon",
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .size(64.dp)
+                )
+            } else {
+                Box(
+                    Modifier.padding(vertical = 8.dp)
+                        .size(64.dp)
+                        .background(Color.White)
+                ) {
                     Text(
-                        text = "Target upload: Neostore",
-                        color = DarkPrimary
-                    )
-                    Text(
-                        text = if (dropdownExpanded) "⬆️" else "⬇️",
-                        modifier = Modifier.padding(start = 8.dp)
+                        text = "Icon",
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
             }
-//            TextField(
-//                value = uiState.minSdk,
-//                onValueChange = { viewModel.setMinSdk(it) },
-//                label = { Text("Min Sdk") },
-//                placeholder = { Text("7", color = PurpleGrey40) },
-//                modifier = Modifier.weight(2f),
-//                singleLine = true
-//            )
-//            TextField(
-//                value = uiState.maxSdk,
-//                onValueChange = { viewModel.setMaxSdk(it) },
-//                label = { Text("Max Sdk") },
-//                placeholder = { Text("21", color = PurpleGrey40) },
-//                modifier = Modifier.weight(2f),
-//                singleLine = true
-//            )
         }
-
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -202,13 +191,10 @@ fun RegisterAppView(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            ButtonBasic("Upload") {
-//                                viewModel.upload()
+                            ButtonBasic("Register") {
                                 viewModel.register()
                             }
-                            ButtonBasic("Clear") {
-//                                viewModel.clear(ClearState.UPLOAD)
-                            }
+                            ButtonBasic("Export Icon") { viewModel.exportIcon() }
                         }
                     }
                 }
@@ -219,8 +205,6 @@ fun RegisterAppView(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 ButtonBasic("Clear All") { viewModel.clear() }
-                ButtonBasic("Register") { viewModel.register() }
-                ButtonBasic("Download") { viewModel.exportIcon() }
             }
 
         }
