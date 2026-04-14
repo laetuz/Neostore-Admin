@@ -130,7 +130,7 @@ class UploadViewModel(
                     fileUrl = fileUrl,
                     changelog = currentState.changelog,
                     minSdk = currentState.minSdk.toInt(),
-                    maxSdk = currentState.maxSdk.toInt(),
+                    maxSdk = if (currentState.maxSdk.isNotEmpty()) currentState.maxSdk.toInt() else currentState.minSdk.toInt()
                 )
 
                 registerResult
@@ -203,7 +203,7 @@ class UploadViewModel(
                     fileUrl = fileUrl,
                     changelog = currentState.changelog,
                     minSdk = currentState.minSdk.toInt(),
-                    maxSdk = currentState.maxSdk.toInt(),
+                    maxSdk = if (currentState.maxSdk.isNotEmpty()) currentState.maxSdk.toInt() else currentState.minSdk.toInt(),
                 )
 
                 publishResult
