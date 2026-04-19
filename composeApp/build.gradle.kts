@@ -27,6 +27,8 @@ kotlin {
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.koin)
             implementation("net.dongliu:apk-parser:2.6.10")
+            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+            implementation("io.coil-kt.coil3:coil-network-ktor3:3.0.4")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -46,7 +48,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Neostore Admin"
-            packageVersion = "1.5.1"
+            packageVersion = "1.6.0"
 
             macOS {
                 iconFile.set { rootProject.file("media/neostore-admin.icns") }
@@ -74,4 +76,5 @@ buildConfig {
 
     buildConfigField("String", "BASE_URL", getCleanConfig("BASE_URL"))
     buildConfigField("String", "BASE_URL_BUCKET", getCleanConfig("BASE_URL_BUCKET"))
+    buildConfigField("String", "BASE_URL_BUCKET_PUBLIC", getCleanConfig("BASE_URL_BUCKET_PUBLIC"))
 }

@@ -8,6 +8,8 @@ import id.neotica.neostore.admin.domain.local.TokenStorage
 import id.neotica.neostore.admin.domain.remote.AuthRepository
 import id.neotica.neostore.admin.ui.feature.upload.UploadViewModel
 import id.neotica.neostore.admin.ui.feature.auth.LoginViewModel
+import id.neotica.neostore.admin.ui.feature.detailapp.DetailAppViewModel
+import id.neotica.neostore.admin.ui.feature.feed.FeedViewModel
 import id.neotica.neostore.admin.ui.feature.registerapp.RegisterAppViewModel
 import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppViewModel
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
@@ -45,6 +47,8 @@ val dataModules = module {
     viewModelOf(::LoginViewModel)
     viewModelOf(::RegisterAppViewModel)
     viewModelOf(::UpdateAppViewModel)
+    viewModelOf(::FeedViewModel)
+    viewModelOf(::DetailAppViewModel)
 }
 
 val networkModule = module {

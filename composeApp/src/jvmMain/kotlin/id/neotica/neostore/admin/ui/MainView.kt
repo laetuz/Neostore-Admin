@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Divider
 import androidx.compose.material.TopAppBar
 import androidx.compose.material3.DropdownMenu
@@ -24,8 +23,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
+import id.neotica.neostore.admin.ui.feature.detailapp.DetailAppView
+import id.neotica.neostore.admin.ui.feature.feed.FeedView
 import id.neotica.neostore.admin.ui.feature.registerapp.RegisterAppView
 import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
@@ -36,7 +38,7 @@ fun MainView(
 ) {
     var screenTypeDropdownExpanded by remember { mutableStateOf(false) }
     var moreDropdownExpanded by remember { mutableStateOf(false) }
-    var screenType by remember { mutableStateOf(MainScreenType.UPLOADER) }
+    var screenType by remember { mutableStateOf(MainScreenType.FEEDS) }
 
     MaterialTheme {
         Scaffold(
@@ -120,17 +122,25 @@ fun MainView(
                 }
             }
         ) {
-            LazyColumn(
-                contentPadding = it,
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(DarkBackground)
+                    .padding(it)
             ) {
-                item {
-                    when (screenType) {
-                        MainScreenType.UPLOADER -> UploadView()
-                        MainScreenType.REGISTRAR -> RegisterAppView()
-                        MainScreenType.UPDATER -> UpdateAppView()
+                var selectedAppToUpdate by remember { mutableStateOf<AppFeedItemResponse?>(null) }
+
+                when (screenType) {
+                    MainScreenType.UPLOADER -> UploadView()
+                    MainScreenType.REGISTRAR -> RegisterAppView()
+                    MainScreenType.UPDATER -> UpdateAppView()
+                    MainScreenType.FEEDS -> FeedView {
+                        selectedAppToUpdate = it
+                        screenType = MainScreenType.DETAIL
+                    }
+
+                    MainScreenType.DETAIL -> DetailAppView(packageName = selectedAppToUpdate?.packageName.toString()) {
+                        screenType = MainScreenType.FEEDS
                     }
                 }
             }
@@ -141,5 +151,7 @@ fun MainView(
 enum class MainScreenType {
     UPLOADER,
     REGISTRAR,
-    UPDATER
+    UPDATER,
+    FEEDS,
+    DETAIL
 }

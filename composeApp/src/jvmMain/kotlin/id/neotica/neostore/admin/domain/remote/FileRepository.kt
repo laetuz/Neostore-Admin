@@ -4,6 +4,8 @@ import id.neotica.neostore.admin.domain.model.AppVersionResponse
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import id.neotica.neostore.admin.domain.model.UpdateAppRequest
 import id.neotica.neostore.admin.domain.model.response.AppDetailResponse
+import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
+import id.neotica.neostore.admin.domain.model.response.PaginationResponse
 import java.io.File
 
 interface FileRepository {
@@ -27,5 +29,11 @@ interface FileRepository {
     suspend fun checkLatestVersion(packageName: String): Result<AppVersionResponse>
     suspend fun registerApp(registerAppRequest: RegisterAppRequest): Result<String>
     suspend fun updateApp(packageName: String, updateAppRequest: UpdateAppRequest): Result<String>
+    suspend fun getFeeds(
+        page: Int = 1,
+        limit: Int = 10,
+        search: String? = null,
+        category: String? = null
+    ): Result<PaginationResponse<AppFeedItemResponse>>
     suspend fun getAppDetail(packageName: String): Result<AppDetailResponse>
 }

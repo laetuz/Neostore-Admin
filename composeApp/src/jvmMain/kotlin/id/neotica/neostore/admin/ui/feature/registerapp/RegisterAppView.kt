@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,13 +29,13 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCard
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.koin.compose.viewmodel.koinViewModel
 import java.awt.datatransfer.DataFlavor
 import java.io.File
@@ -78,7 +79,7 @@ fun RegisterAppView(
         }
     }
     Column(
-        Modifier.padding(16.dp)
+        modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         Text(
             text = "Welcome to Neostore App Registrar.",
@@ -92,7 +93,7 @@ fun RegisterAppView(
         ) {
             if (uiState.iconByteArray != null) {
                 val bitmap = remember(uiState.iconByteArray) {
-                    loadImageBitmap(uiState.iconByteArray!!.inputStream())
+                    uiState.iconByteArray!!.inputStream().readAllBytes().decodeToImageBitmap()
                 }
 
                 Image(

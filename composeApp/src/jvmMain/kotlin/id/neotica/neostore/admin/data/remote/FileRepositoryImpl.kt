@@ -6,6 +6,8 @@ import id.neotica.neostore.admin.domain.model.AppVersionResponse
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import id.neotica.neostore.admin.domain.model.UpdateAppRequest
 import id.neotica.neostore.admin.domain.model.response.AppDetailResponse
+import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
+import id.neotica.neostore.admin.domain.model.response.PaginationResponse
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
@@ -14,6 +16,7 @@ import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -171,6 +174,29 @@ class FileRepositoryImpl(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun getFeeds(
+        page: Int,
+        limit: Int,
+        search: String?,
+        category: String?
+    ): Result<PaginationResponse<AppFeedItemResponse>> = try {
+        val response = httpClient.get("$BASE_URL/neostore/apps/feed") {
+            parameter("page", page)
+            parameter("limit", limit)
+
+            if (!search.isNullOrBlank()) parameter("search", search)
+            if (!category.isNullOrBlank()) parameter("category", category)
+        }
+
+        if (response.status.isSuccess()) {
+            Result.success(response.body())
+        } else {
+            Result.failure(Exception("Failed to fetch feeds: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     override suspend fun getAppDetail(packageName: String): Result<AppDetailResponse> = try {
