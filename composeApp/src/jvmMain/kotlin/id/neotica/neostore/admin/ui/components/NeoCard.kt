@@ -2,8 +2,7 @@ package id.neotica.neostore.admin.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
@@ -23,7 +22,7 @@ fun NeoCard(
         modifier = modifier
             .then(
                 if (dropTarget != null) Modifier
-                    .width(300.dp)
+                    .fillMaxWidth()
                     .dragAndDropTarget(
                     shouldStartDragAndDrop = {true},
                     target = dropTarget

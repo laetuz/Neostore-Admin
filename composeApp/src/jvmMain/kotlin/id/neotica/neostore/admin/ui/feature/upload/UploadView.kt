@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -69,10 +73,11 @@ fun UploadView(
                 val transferable = event.awtTransferable
                 if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                     val files = transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
-                    val file = files.firstOrNull() as? File
 
-                    if (file != null) {
-                        viewModel.setPath(file.absolutePath)
+                    val validFiles = files?.filterIsInstance<File>() ?: emptyList()
+
+                    if (validFiles.isNotEmpty()) {
+                        viewModel.addFilesToQueue(validFiles)
                         return true
                     }
                 }
@@ -186,8 +191,8 @@ fun UploadView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        Column (
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             // Drag and Drop Area
@@ -195,68 +200,128 @@ fun UploadView(
                 isDragging = isDragging,
                 dropTarget = dropTarget
             ) {
-                Column(
+                Row(
                     modifier = Modifier.padding(16.dp).fillMaxWidth()
                 ) {
-                    Text(
-                        text = if (uiState.filePath.isEmpty()) "Drag and drop a file here" else "File Selected",
-                        color = if (isDragging) MaterialTheme.colorScheme.primary else Color.Gray
-                    )
-
-                    if (uiState.filePath.isNotEmpty()) {
-                        Text(
-                            text = uiState.filePath,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.width(200.dp)
-                        )
-                    }
-
-                    if (uiState.isLoading || uiState.uploadProgress > 0f) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            LinearProgressIndicator(
-                                progress = { uiState.uploadProgress },
-                                modifier = Modifier.fillMaxWidth().height(8.dp),
-                            )
+                    Column {
+                        if (uiState.uploadQueue.size > 1 || uiState.uploadQueue.any { it.status != FileStatus.PENDING }) {
                             Text(
-                                text = "${(uiState.uploadProgress * 100).toInt()}%",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(top = 4.dp)
+                                text = "Bulk Queue: ${uiState.uploadQueue.size} files ready.",
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            if (uiState.isBulkProcessing) {
+                                Text(
+                                    text = "Processing File ${uiState.currentQueueIndex} of ${uiState.uploadQueue.size}",
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            } else {
+                                // Show a preview of the queued files
+                                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                                    uiState.uploadQueue.take(3).forEach { file ->
+//                                    Text("• ${file.name}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                    }
+                                    if (uiState.uploadQueue.size > 3) {
+                                        Text("... and ${uiState.uploadQueue.size - 3} more.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                    }
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = if (uiState.filePath.isEmpty()) "Drag and drop APK(s) here" else "File Selected",
+                                color = if (isDragging) MaterialTheme.colorScheme.primary else Color.Gray
                             )
                         }
-                    }
 
-                    if (uiState.statusMessage.isNotEmpty()) {
-                        Text(
-                            text = uiState.statusMessage,
-                            color = MaterialTheme.colorScheme.secondary,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+                        if (uiState.filePath.isNotEmpty()) {
+                            Text(
+                                text = uiState.filePath,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.width(200.dp)
+                            )
+                        }
 
-                    if (uiState.filePath.isNotEmpty() && !uiState.isLoading) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        if (uiState.isLoading || uiState.uploadProgress > 0f) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                LinearProgressIndicator(
+                                    progress = { uiState.uploadProgress },
+                                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                                )
+                                Text(
+                                    text = "${(uiState.uploadProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+
+                        if (uiState.statusMessage.isNotEmpty()) {
+                            Text(
+                                text = uiState.statusMessage,
+                                color = MaterialTheme.colorScheme.secondary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+
+                    }
+                    if (!uiState.isLoading && !uiState.isBulkProcessing) {
+                        Column (
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            ButtonBasic("Upload") {
-                                viewModel.upload()
+                            Row {
+                                Column {
+                                    if (uiState.uploadQueue.size > 1) {
+                                        ButtonBasic("Start Bulk Upload") { viewModel.startBulkUpload() }
+                                    } else if (uiState.filePath.isNotEmpty()) {
+                                        ButtonBasic("Upload") { viewModel.upload() }
+                                    }
+                                }
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    ButtonBasic("Clear All") { viewModel.clear(ClearState.ALL) }
+                                }
                             }
-                            ButtonBasic("Clear") {
-                                viewModel.clear(ClearState.UPLOAD)
+
+                            if (uiState.uploadQueue.isNotEmpty() || uiState.filePath.isNotEmpty()) {
+                                ButtonBasic("Clear") { viewModel.clear(ClearState.UPLOAD) }
+                            }
+
+                            LazyColumn {
+                                items(uiState.uploadQueue) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "• ${it.file.name}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = DarkPrimary,
+                                            modifier = Modifier.weight(1f)
+                                        )
+
+                                        // Status Indicator
+                                        when (it.status) {
+                                            FileStatus.PENDING -> Text("Waiting", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                            FileStatus.PROCESSING -> CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                            FileStatus.SUCCESS -> Text("✅ Success", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                                            FileStatus.FAILED -> Text("❌ ${it.errorMessage}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                ButtonBasic("Clear All") { viewModel.clear(ClearState.ALL) }
-            }
-
         }
     }
 }

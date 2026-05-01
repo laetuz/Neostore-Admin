@@ -1,5 +1,7 @@
 package id.neotica.neostore.admin.ui.feature.upload
 
+import java.io.File
+
 data class UploadUiState(
     val isLoading: Boolean = false,
     val filePath: String = "",
@@ -16,5 +18,17 @@ data class UploadUiState(
     val title: String = "",
     val description: String = "",
     val category: String = "APPLICATION", // Defaulting to APPLICATION
-    val iconByteArray: ByteArray? = null
+    val iconByteArray: ByteArray? = null,
+
+    val uploadQueue: List<QueuedFile> = emptyList(),
+    val isBulkProcessing: Boolean = false,
+    val currentQueueIndex: Int = 0
+)
+
+enum class FileStatus { PENDING, PROCESSING, SUCCESS, FAILED }
+
+data class QueuedFile(
+    val file: File,
+    val status: FileStatus = FileStatus.PENDING,
+    val errorMessage: String? = null
 )
