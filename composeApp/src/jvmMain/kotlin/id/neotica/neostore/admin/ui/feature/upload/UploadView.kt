@@ -198,12 +198,16 @@ fun UploadView(
             // Drag and Drop Area
             NeoCard(
                 isDragging = isDragging,
-                dropTarget = dropTarget
+                dropTarget = dropTarget,
+                modifier = Modifier.height(200.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth()
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         if (uiState.uploadQueue.size > 1 || uiState.uploadQueue.any { it.status != FileStatus.PENDING }) {
                             Text(
                                 text = "Bulk Queue: ${uiState.uploadQueue.size} files ready.",

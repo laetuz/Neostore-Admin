@@ -22,7 +22,9 @@ class UploadViewModel(
 
     fun clear(type: ClearState) {
         when (type) {
-            ClearState.UPLOAD -> _uiState.update { it.copy(filePath = "", statusMessage =  "", uploadProgress =  0f) }
+            ClearState.UPLOAD -> _uiState.update {
+                it.copy(filePath = "", statusMessage =  "", uploadProgress =  0f, uploadQueue = emptyList())
+            }
             ClearState.ALL -> _uiState.update { UploadUiState() }
         }
     }
@@ -273,6 +275,8 @@ class UploadViewModel(
             it.copy(isLoading = true, statusMessage = "Starting upload...", uploadProgress = 0f)
         }
 
+        updateQueueStatus(file, FileStatus.PROCESSING)
+
         val bucketUrl = "$BASE_URL_BUCKET/neostore"
 
         viewModelScope.launch {
@@ -303,7 +307,10 @@ class UploadViewModel(
                 )
 
                 registerResult
-                    .onSuccess { _uiState.update { it.copy(statusMessage = "Version published successfully! ✅", isLoading = false) } }
+                    .onSuccess {
+                        _uiState.update { it.copy(statusMessage = "Version published successfully! ✅", isLoading = false) }
+                        updateQueueStatus(file, FileStatus.SUCCESS)
+                    }
                     .onFailure { error ->
                         when (error.message) {
                             "Package not found"-> {
@@ -312,6 +319,7 @@ class UploadViewModel(
                             "Failed to publish app version" -> registerApp()
                             else -> {
                                 _uiState.update { it.copy(statusMessage = "File uploaded, but registration failed: ${error.message} ❌", isLoading = false) }
+                                updateQueueStatus(file, FileStatus.FAILED, error.message)
                             }
                         }
                     }
@@ -319,12 +327,14 @@ class UploadViewModel(
                 _uiState.update {
                     it.copy(statusMessage = "Error: ${e.message} ❌", isLoading = false)
                 }
+                updateQueueStatus(file, FileStatus.FAILED, e.message)
             }
         }
     }
 
     fun registerApp() {
         val currentState = _uiState.value
+        val file = File(currentState.filePath)
         _uiState.update { it.copy(statusMessage = "Package not found. Auto-registering root app...") }
 
         viewModelScope.launch {
@@ -376,11 +386,18 @@ class UploadViewModel(
                 )
 
                 publishResult
-                    .onSuccess { _uiState.update { it.copy(statusMessage = "Auto-Registration & Publish complete! ✅", isLoading = false) } }
-                    .onFailure { error -> _uiState.update { it.copy(statusMessage = "Registered app, but publish failed: ${error.message} ❌", isLoading = false) } }
+                    .onSuccess {
+                        _uiState.update { it.copy(statusMessage = "Auto-Registration & Publish complete! ✅", isLoading = false) }
+                        updateQueueStatus(file, FileStatus.SUCCESS)
+                    }
+                    .onFailure { error ->
+                        _uiState.update { it.copy(statusMessage = "Registered app, but publish failed: ${error.message} ❌", isLoading = false) }
+                        updateQueueStatus(file, FileStatus.FAILED, error.message)
+                    }
 
             }.onFailure { e ->
                 _uiState.update { it.copy(statusMessage = "Auto-registration failed: ${e.message} ❌", isLoading = false) }
+                updateQueueStatus(file, FileStatus.FAILED, e.message)
             }
         }
     }

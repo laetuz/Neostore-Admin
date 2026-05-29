@@ -2,12 +2,10 @@ package id.neotica.neostore.admin.ui.feature.feed
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -47,7 +45,11 @@ fun FeedView(
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
         // --- HEADER & CONTROLS ---
-        Text("NeoStore Ecosystem Dashboard", style = MaterialTheme.typography.headlineMedium, color = DarkPrimary)
+        Text(
+            text = "NeoStore Ecosystem Dashboard",
+            style = MaterialTheme.typography.headlineSmall,
+            color = DarkPrimary
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -125,42 +127,84 @@ fun FeedView(
         }
 
         // --- NUMBERED PAGINATION ROW ---
+        // --- SMART PAGINATION ROW ---
         if (uiState.totalPages > 1) {
+            // Determine visible page window (e.g., max 5 pages visible at once)
+            val maxVisiblePages = 5
+            var startPage = maxOf(1, uiState.currentPage - maxVisiblePages / 2)
+            var endPage = minOf(uiState.totalPages, startPage + maxVisiblePages - 1)
+
+            // Adjust start if we are near the end
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = maxOf(1, endPage - maxVisiblePages + 1)
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
-                    // Makes it scrollable left-to-right just in case there are 50+ pages
-                    .horizontalScroll(rememberScrollState()),
+                    .padding(top = 16.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                for (pageIndex in 1..uiState.totalPages) {
-                    val isSelected = pageIndex == uiState.currentPage
+                // Previous Button
+                if (uiState.currentPage > 1) {
+                    PageButton("<") { viewModel.fetchFeeds(uiState.currentPage - 1) }
+                }
 
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .clickable(enabled = !isSelected) {
-                                viewModel.fetchFeeds(page = pageIndex)
-                            }
-                            .border(
-                                width = 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = pageIndex.toString(),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else DarkPrimary,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
+                // First Page + Ellipsis
+                if (startPage > 1) {
+                    PageButton("1") { viewModel.fetchFeeds(1) }
+                    if (startPage > 2) {
+                        Text("...", modifier = Modifier.padding(horizontal = 8.dp), color = Color.Gray)
                     }
+                }
+
+                // Page Numbers
+                for (pageIndex in startPage..endPage) {
+                    PageButton(
+                        text = pageIndex.toString(),
+                        isSelected = pageIndex == uiState.currentPage
+                    ) {
+                        viewModel.fetchFeeds(pageIndex)
+                    }
+                }
+
+                // Last Page + Ellipsis
+                if (endPage < uiState.totalPages) {
+                    if (endPage < uiState.totalPages - 1) {
+                        Text("...", modifier = Modifier.padding(horizontal = 8.dp), color = Color.Gray)
+                    }
+                    PageButton(uiState.totalPages.toString()) { viewModel.fetchFeeds(uiState.totalPages) }
+                }
+
+                // Next Button
+                if (uiState.currentPage < uiState.totalPages) {
+                    PageButton(">") { viewModel.fetchFeeds(uiState.currentPage + 1) }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PageButton(text: String, isSelected: Boolean = false, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .clickable(enabled = !isSelected) { onClick() }
+            .border(
+                width = 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                shape = MaterialTheme.shapes.small
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = text,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else DarkPrimary,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }
 
