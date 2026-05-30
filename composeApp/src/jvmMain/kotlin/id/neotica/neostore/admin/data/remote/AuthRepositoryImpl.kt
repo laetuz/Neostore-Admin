@@ -20,7 +20,7 @@ class AuthRepositoryImpl(
         password: String
     ): Result<String> {
         try {
-            val response = httpClient.get("${baseUrl}/auth/auth") {
+            val response = httpClient.get("${baseUrl}/auth/login") {
                 header("username", username)
                 header("password", password)
             }
