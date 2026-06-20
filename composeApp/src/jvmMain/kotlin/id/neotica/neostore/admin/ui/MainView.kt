@@ -16,13 +16,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.awt.KeyEventDispatcher
+import java.awt.KeyboardFocusManager
+import java.awt.event.KeyEvent
 import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
@@ -31,127 +34,111 @@ import id.neotica.neostore.admin.ui.feature.feed.FeedView
 import id.neotica.neostore.admin.ui.feature.registerapp.RegisterAppView
 import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
+import id.neotica.neostore.admin.ui.navigation.AppNavigationRail
+import id.neotica.neostore.admin.ui.navigation.MainScreenType
 
 @Composable
 fun MainView(
     onLogout: () -> Unit = {}
 ) {
-    var screenTypeDropdownExpanded by remember { mutableStateOf(false) }
     var moreDropdownExpanded by remember { mutableStateOf(false) }
     var screenType by remember { mutableStateOf(MainScreenType.FEEDS) }
+    var selectedAppToUpdate by remember { mutableStateOf<AppFeedItemResponse?>(null) }
 
     MaterialTheme {
         Scaffold(
             topBar = {
                 Column {
-                    Row {
-                        TopAppBar(
-                            title = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "Neostore Admin",
+                                color = DarkPrimary
+                            )
+                        },
+                        backgroundColor = DarkBackground,
+                        actions = {
+                            Box(
+                                Modifier
+                                    .border(1.dp, DarkPrimary)
+                                    .clickable { moreDropdownExpanded = !moreDropdownExpanded }
+                            ) {
                                 Text(
-                                    text = "Neostore Admin",
-                                    color = DarkPrimary
+                                    text = "More \u25BE",
+                                    color = DarkPrimary,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                                 )
-                            },
-                            backgroundColor = DarkBackground,
-                            actions = {
-                                Row {
-                                    Box(
-                                        modifier = Modifier
-                                            .clickable { screenTypeDropdownExpanded = !screenTypeDropdownExpanded }
-                                            .border(1.dp, MaterialTheme.colorScheme.primary)
-                                            .padding(8.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = screenType.name,
-                                                color = DarkPrimary
-                                            )
-                                            Text(
-                                                text = if (screenTypeDropdownExpanded) "⬆️" else "⬇️",
-                                                modifier = Modifier.padding(start = 8.dp)
-                                            )
+                                DropdownMenu(
+                                    expanded = moreDropdownExpanded,
+                                    onDismissRequest = { moreDropdownExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Logout") },
+                                        onClick = {
+                                            moreDropdownExpanded = false
+                                            onLogout()
                                         }
-
-                                        DropdownMenu(
-                                            expanded = screenTypeDropdownExpanded,
-                                            onDismissRequest = { screenTypeDropdownExpanded = false }
-                                        ) {
-                                            MainScreenType.entries.forEach { target ->
-                                                DropdownMenuItem(
-                                                    text = { Text(target.name) },
-                                                    onClick = {
-                                                        screenTypeDropdownExpanded = false
-                                                        screenType = target
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Box(
-                                        Modifier
-                                            .border(1.dp, DarkPrimary)
-                                            .clickable { moreDropdownExpanded = !moreDropdownExpanded }
-                                    ) {
-                                        Text(
-                                            text = "More ...",
-                                            color = DarkPrimary,
-                                            modifier = Modifier.padding(8.dp)
-                                        )
-                                        DropdownMenu(
-                                            expanded = moreDropdownExpanded,
-                                            onDismissRequest = { moreDropdownExpanded = false }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Logout") },
-                                                onClick = {
-                                                    moreDropdownExpanded = false
-                                                    onLogout()
-                                                }
-                                            )
-                                        }
-                                    }
+                                    )
                                 }
                             }
-                        )
-                    }
-
-                    Divider(
-                        thickness = 2.dp,
-                        color = DarkPrimary
+                        }
                     )
+                    Divider(thickness = 2.dp, color = DarkPrimary)
                 }
             }
-        ) {
-            Column(
+        ) { paddingValues ->
+            val tabKeyCodes = mapOf(
+                KeyEvent.VK_1 to MainScreenType.UPLOADER,
+                KeyEvent.VK_2 to MainScreenType.REGISTRAR,
+                KeyEvent.VK_3 to MainScreenType.UPDATER,
+                KeyEvent.VK_4 to MainScreenType.FEEDS,
+            )
+
+            DisposableEffect(Unit) {
+                val dispatcher = KeyEventDispatcher { event ->
+                    if (event.id == KeyEvent.KEY_PRESSED
+                        && event.keyCode in tabKeyCodes
+                        && (event.isMetaDown || event.isControlDown)
+                    ) {
+                        screenType = tabKeyCodes[event.keyCode]!!
+                        true
+                    } else false
+                }
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(dispatcher)
+                onDispose { KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher) }
+            }
+
+            Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(DarkBackground)
-                    .padding(it)
+                    .padding(paddingValues)
             ) {
-                var selectedAppToUpdate by remember { mutableStateOf<AppFeedItemResponse?>(null) }
+                AppNavigationRail(
+                    currentScreen = screenType,
+                    onNavigate = { screenType = it },
+                )
 
-                when (screenType) {
-                    MainScreenType.UPLOADER -> UploadView()
-                    MainScreenType.REGISTRAR -> RegisterAppView()
-                    MainScreenType.UPDATER -> UpdateAppView()
-                    MainScreenType.FEEDS -> FeedView {
-                        selectedAppToUpdate = it
-                        screenType = MainScreenType.DETAIL
-                    }
-
-                    MainScreenType.DETAIL -> DetailAppView(packageName = selectedAppToUpdate?.packageName.toString()) {
-                        screenType = MainScreenType.FEEDS
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 1.dp)
+                ) {
+                    when (screenType) {
+                        MainScreenType.UPLOADER -> UploadView()
+                        MainScreenType.REGISTRAR -> RegisterAppView()
+                        MainScreenType.UPDATER -> UpdateAppView()
+                        MainScreenType.FEEDS -> FeedView {
+                            selectedAppToUpdate = it
+                            screenType = MainScreenType.DETAIL
+                        }
+                        MainScreenType.DETAIL -> DetailAppView(
+                            packageName = selectedAppToUpdate?.packageName.toString(),
+                            onClick = { screenType = MainScreenType.FEEDS }
+                        )
                     }
                 }
             }
         }
     }
-}
-
-enum class MainScreenType {
-    UPLOADER,
-    REGISTRAR,
-    UPDATER,
-    FEEDS,
-    DETAIL
 }
