@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import id.neotica.neostore.admin.domain.remote.FileRepository
-import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,13 +124,11 @@ class UploadViewModel(
     private suspend fun uploadSynchronously(): String? {
         val currentState = _uiState.value
         val file = File(currentState.filePath)
-        val bucketUrl = "$BASE_URL_BUCKET/neostore"
 
         _uiState.update { it.copy(isLoading = true, statusMessage = "Uploading ${file.name}...", uploadProgress = 0f) }
 
         val uploadResult = repository.uploadFile(
             file = file,
-            s3Path = bucketUrl,
             apkPath = currentState.apkFileFolder,
             versionCode = currentState.versionCode.toInt()
         ) { progress ->
@@ -165,7 +162,6 @@ class UploadViewModel(
 
     private suspend fun registerAppSynchronously(): String? {
         val currentState = _uiState.value
-        val bucketUrl = "$BASE_URL_BUCKET/neostore"
         _uiState.update { it.copy(statusMessage = "Auto-registering ${currentState.apkFileFolder}...") }
 
         val registerRequest = RegisterAppRequest(
@@ -180,7 +176,7 @@ class UploadViewModel(
             try {
                 val tempIcon = File.createTempFile("app_icon", ".png")
                 tempIcon.writeBytes(currentState.iconByteArray)
-                repository.uploadIcon(file = tempIcon, s3Path = bucketUrl, apkPath = currentState.apkFileFolder)
+                repository.uploadIcon(file = tempIcon, apkPath = currentState.apkFileFolder)
                 tempIcon.deleteOnExit()
             } catch (e: Exception) { /* Ignore icon failure */ }
         }
@@ -277,12 +273,10 @@ class UploadViewModel(
 
         updateQueueStatus(file, FileStatus.PROCESSING)
 
-        val bucketUrl = "$BASE_URL_BUCKET/neostore"
 
         viewModelScope.launch {
             val uploadResult = repository.uploadFile(
                 file = file,
-                s3Path = bucketUrl,
                 apkPath = currentState.apkFileFolder,
                 versionCode = currentState.versionCode.toInt()
             ) { progress ->
@@ -338,8 +332,6 @@ class UploadViewModel(
         _uiState.update { it.copy(statusMessage = "Package not found. Auto-registering root app...") }
 
         viewModelScope.launch {
-            val bucketUrl = "$BASE_URL_BUCKET/neostore"
-
             val registerRequest = RegisterAppRequest(
                 packageName = currentState.apkFileFolder,
                 title = currentState.title,
@@ -360,7 +352,6 @@ class UploadViewModel(
 
                         repository.uploadIcon(
                             file = tempIcon,
-                            s3Path = bucketUrl,
                             apkPath = currentState.apkFileFolder
                         )
 

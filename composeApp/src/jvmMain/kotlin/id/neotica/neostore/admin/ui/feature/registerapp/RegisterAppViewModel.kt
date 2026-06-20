@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import id.neotica.neostore.admin.domain.remote.FileRepository
-import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -94,7 +93,6 @@ class RegisterAppViewModel(
         }
     }
 
-    // todo: add function for upload, clear, and apk analyzer. Also icon extractor from the analyzer. Icon uploader too.
     fun register() {
         val currentState = _uiState.value
 
@@ -109,8 +107,6 @@ class RegisterAppViewModel(
         }
 
         viewModelScope.launch {
-            val bucketUrl = "$BASE_URL_BUCKET/neostore"
-
             // Register the app first
             val registerRequest = RegisterAppRequest(
                 packageName = currentState.packageName,
@@ -133,7 +129,6 @@ class RegisterAppViewModel(
                         // Call our new dedicated image upload function
                         repo.uploadIcon(
                             file = tempIcon,
-                            s3Path = bucketUrl,
                             apkPath = currentState.packageName
                         )
 

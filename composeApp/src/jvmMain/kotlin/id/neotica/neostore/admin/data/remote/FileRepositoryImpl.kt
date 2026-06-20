@@ -10,6 +10,7 @@ import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.domain.model.response.PaginationResponse
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
+import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
@@ -38,7 +39,6 @@ class FileRepositoryImpl(
 
     override suspend fun uploadFile(
         file: File,
-        s3Path: String,
         apkPath: String,
         versionCode: Int,
         onProgress: (Float) -> Unit,
@@ -46,11 +46,10 @@ class FileRepositoryImpl(
         val apkPathCheck = apkPath.ifEmpty { "" }
         return try {
             if (file.length() > LARGE_FILE_THRESHOLD) {
-                uploadRaw(file, s3Path, onProgress)
+                uploadRaw(file, onProgress)
             } else {
                 uploadMultipart(
                     file = file,
-                    s3Path = s3Path,
                     apkPath = apkPathCheck,
                     versionCode = versionCode,
                     onProgress = onProgress
@@ -63,11 +62,10 @@ class FileRepositoryImpl(
 
     override suspend fun uploadIcon(
         file: File,
-        s3Path: String,
         apkPath: String
     ): Result<String> {
         return try {
-            val response = httpClient.post("$s3Path/upload/form") {
+            val response = httpClient.post(BASE_URL_BUCKET) {
                 setBody(
                     MultiPartFormDataContent(
                         formData {
@@ -212,10 +210,9 @@ class FileRepositoryImpl(
 
     suspend fun uploadRaw(
         file: File,
-        s3Path: String,
         onProgress: (Float) -> Unit
     ): Result<String> {
-        val response = httpClient.post("$s3Path/raw") {
+        val response = httpClient.post("$BASE_URL/bucket/v1/neostore/upload/raw") {
 
             // Stream directly from disk
             setBody(file.readChannel())
@@ -237,12 +234,11 @@ class FileRepositoryImpl(
 
     suspend fun uploadMultipart(
         file: File,
-        s3Path: String,
         apkPath: String,
         versionCode: Int,
         onProgress: (Float) -> Unit
     ): Result<String> {
-        val response = ktorClient.post("$s3Path/upload/form") {
+        val response = ktorClient.post(BASE_URL_BUCKET) {
             setBody(
                 MultiPartFormDataContent(
                     formData {

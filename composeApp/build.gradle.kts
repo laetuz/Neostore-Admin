@@ -48,10 +48,13 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Neostore Admin"
-            packageVersion = "1.7.2"
+            packageVersion = "1.7.3"
 
             macOS {
                 iconFile.set { rootProject.file("media/neostore-admin.icns") }
+            }
+            windows {
+                iconFile.set { rootProject.file("media/neostore-admin.ico") }
             }
         }
     }
