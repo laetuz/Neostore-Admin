@@ -48,7 +48,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Neostore Admin"
-            packageVersion = "1.8.0"
+            packageVersion = (System.getenv("GITHUB_REF_NAME") ?: "1.8.0").removePrefix("v")
 
             macOS {
                 iconFile.set { rootProject.file("media/neostore-admin.icns") }

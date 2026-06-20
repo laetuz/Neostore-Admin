@@ -44,10 +44,30 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build ${{ matrix.format }}
-        run: ./gradlew clean ${{ matrix.task }} --no-configuration-cache
+        run: ./gradlew clean ${{ matrix.task }} --no-configuration-cache --no-build-cache
 
-      - name: Upload to Release
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.format }}
+          path: composeApp/build/compose/binaries/**/*.${{ matrix.format }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List Artifacts
+        run: find artifacts -type f
+
+      - name: Create Release & Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: composeApp/build/compose/binaries/**/*.${{ matrix.format }}
+          files: artifacts/**/*
           generate_release_notes: true
