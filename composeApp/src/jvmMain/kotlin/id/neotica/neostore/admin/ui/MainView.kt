@@ -96,12 +96,24 @@ fun MainView(
 
             DisposableEffect(Unit) {
                 val dispatcher = KeyEventDispatcher { event ->
-                    if (event.id == KeyEvent.KEY_PRESSED
-                        && event.keyCode in tabKeyCodes
-                        && (event.isMetaDown || event.isControlDown)
-                    ) {
-                        screenType = tabKeyCodes[event.keyCode]!!
-                        true
+                    if (event.id == KeyEvent.KEY_PRESSED) {
+                        when (event.keyCode) {
+                            in tabKeyCodes
+                                if (event.isMetaDown || event.isControlDown)
+                                -> {
+                                screenType = tabKeyCodes[event.keyCode]!!
+                                true
+                            }
+
+                            KeyEvent.VK_ESCAPE
+                                if screenType == MainScreenType.DETAIL
+                                -> {
+                                screenType = MainScreenType.FEEDS
+                                true
+                            }
+
+                            else -> false
+                        }
                     } else false
                 }
                 KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(dispatcher)
