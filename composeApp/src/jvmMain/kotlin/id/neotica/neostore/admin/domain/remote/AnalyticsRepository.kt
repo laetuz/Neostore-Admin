@@ -10,6 +10,8 @@ interface AnalyticsRepository {
         eventType: String? = null,
         sourceService: String? = null,
         userId: String? = null,
+        from: String? = null,
+        to: String? = null,
         page: Int = 1,
         limit: Int = 10
     ): Result<PaginatedResponse<AnalyticsEvent>>

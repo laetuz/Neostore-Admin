@@ -19,6 +19,8 @@ class AnalyticsRepositoryImpl(
         eventType: String?,
         sourceService: String?,
         userId: String?,
+        from: String?,
+        to: String?,
         page: Int,
         limit: Int
     ): Result<PaginatedResponse<AnalyticsEvent>> = try {
@@ -26,6 +28,8 @@ class AnalyticsRepositoryImpl(
             eventType?.let { parameter("event_type", it) }
             sourceService?.let { parameter("source_service", it) }
             userId?.let { parameter("user_id", it) }
+            from?.let { parameter("from", it) }
+            to?.let { parameter("to", it) }
             parameter("page", page)
             parameter("limit", limit)
         }

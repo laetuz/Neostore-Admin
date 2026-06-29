@@ -29,6 +29,49 @@ class AnalyticsViewModel(
         verifyAndLoad()
     }
 
+    fun selectDate(date: String) {
+        _uiState.update { it.copy(selectedDate = date) }
+        fetchEventsForDate(date, page = 1)
+    }
+
+    fun backToDashboard() {
+        _uiState.update {
+            it.copy(selectedDate = null, events = emptyList(), isLoadingEvents = false, errorEvents = null)
+        }
+    }
+
+    fun loadNextPage() {
+        val s = _uiState.value
+        val date = s.selectedDate ?: return
+        if (s.isLoadingEvents || s.eventsPage >= s.eventsTotalPages) return
+        fetchEventsForDate(date, page = s.eventsPage + 1, append = true)
+    }
+
+    private fun fetchEventsForDate(date: String, page: Int, append: Boolean = false) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingEvents = true, errorEvents = null) }
+
+            val result = analyticsRepository.getEvents(
+                from = date, to = date, page = page, limit = 20
+            )
+
+            result.onSuccess { response ->
+                _uiState.update {
+                    it.copy(
+                        isLoadingEvents = false,
+                        events = if (append) it.events + response.data else response.data,
+                        eventsPage = response.page,
+                        eventsTotalPages = response.total_pages
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(isLoadingEvents = false, errorEvents = error.message ?: "Failed to load events.")
+                }
+            }
+        }
+    }
+
     private fun verifyAndLoad() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
