@@ -5,7 +5,8 @@ enum class MainScreenType {
     REGISTRAR,
     UPDATER,
     FEEDS,
-    DETAIL
+    DETAIL,
+    ANALYTICS
 }
 
 data class NavItem(
@@ -19,4 +20,5 @@ val navItems = listOf(
     NavItem(MainScreenType.REGISTRAR, "Register", "🖌️"),
     NavItem(MainScreenType.UPDATER, "Update", "🔄"),
     NavItem(MainScreenType.FEEDS, "Feed", "📋"),
+    NavItem(MainScreenType.ANALYTICS, "Analytics", "📊"),
 )

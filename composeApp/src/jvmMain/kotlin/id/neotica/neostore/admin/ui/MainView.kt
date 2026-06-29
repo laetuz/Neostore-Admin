@@ -35,6 +35,7 @@ import id.neotica.neostore.admin.ui.feature.registerapp.RegisterAppView
 import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
 import id.neotica.neostore.admin.ui.navigation.AppNavigationRail
+import id.neotica.neostore.admin.ui.feature.analytics.AnalyticsView
 import id.neotica.neostore.admin.ui.navigation.MainScreenType
 
 @Composable
@@ -92,6 +93,7 @@ fun MainView(
                 KeyEvent.VK_2 to MainScreenType.REGISTRAR,
                 KeyEvent.VK_3 to MainScreenType.UPDATER,
                 KeyEvent.VK_4 to MainScreenType.FEEDS,
+                KeyEvent.VK_5 to MainScreenType.ANALYTICS,
             )
 
             DisposableEffect(Unit) {
@@ -148,6 +150,7 @@ fun MainView(
                             packageName = selectedAppToUpdate?.packageName.toString(),
                             onClick = { screenType = MainScreenType.FEEDS }
                         )
+                        MainScreenType.ANALYTICS -> AnalyticsView()
                     }
                 }
             }
