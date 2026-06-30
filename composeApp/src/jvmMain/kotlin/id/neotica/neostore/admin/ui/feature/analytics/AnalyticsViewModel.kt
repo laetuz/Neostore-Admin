@@ -36,8 +36,24 @@ class AnalyticsViewModel(
 
     fun backToDashboard() {
         _uiState.update {
-            it.copy(selectedDate = null, events = emptyList(), isLoadingEvents = false, errorEvents = null)
+            it.copy(selectedDate = null, events = emptyList(), isLoadingEvents = false, errorEvents = null, selectedEvent = null)
         }
+    }
+
+    fun selectEvent(id: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingEventDetail = true, eventDetailError = null) }
+            val result = analyticsRepository.getEventById(id)
+            result.onSuccess { event ->
+                _uiState.update { it.copy(isLoadingEventDetail = false, selectedEvent = event) }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isLoadingEventDetail = false, eventDetailError = error.message ?: "Failed to load event.") }
+            }
+        }
+    }
+
+    fun clearEventDetail() {
+        _uiState.update { it.copy(selectedEvent = null, isLoadingEventDetail = false, eventDetailError = null) }
     }
 
     fun loadNextPage() {

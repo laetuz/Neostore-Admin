@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +50,9 @@ fun AnalyticsView(
         onRefresh = viewModel::refresh,
         onDateSelected = viewModel::selectDate,
         onBack = viewModel::backToDashboard,
-        onLoadNextPage = viewModel::loadNextPage
+        onLoadNextPage = viewModel::loadNextPage,
+        onEventSelected = viewModel::selectEvent,
+        onBackFromEvent = viewModel::clearEventDetail
     )
 }
 
@@ -58,7 +62,9 @@ private fun AnalyticsViewContent(
     onRefresh: () -> Unit,
     onDateSelected: (String) -> Unit,
     onBack: () -> Unit,
-    onLoadNextPage: () -> Unit
+    onLoadNextPage: () -> Unit,
+    onEventSelected: (String) -> Unit,
+    onBackFromEvent: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -81,8 +87,15 @@ private fun AnalyticsViewContent(
             return@Column
         }
 
-        if (state.isShowingDetail) {
-            EventDetailContent(state = state, onBack = onBack, onLoadNextPage = onLoadNextPage)
+        if (state.isShowingEventDetail) {
+            EventFullDetailContent(state = state, onBack = onBackFromEvent)
+        } else if (state.isShowingDetail) {
+            EventDetailContent(
+                state = state,
+                onBack = onBack,
+                onLoadNextPage = onLoadNextPage,
+                onEventSelected = onEventSelected
+            )
         } else {
             DashboardContent(state = state, onDateSelected = onDateSelected)
         }
@@ -148,7 +161,12 @@ private fun DashboardContent(state: AnalyticsUiState, onDateSelected: (String) -
 }
 
 @Composable
-private fun EventDetailContent(state: AnalyticsUiState, onBack: () -> Unit, onLoadNextPage: () -> Unit) {
+private fun EventDetailContent(
+    state: AnalyticsUiState,
+    onBack: () -> Unit,
+    onLoadNextPage: () -> Unit,
+    onEventSelected: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -186,7 +204,7 @@ private fun EventDetailContent(state: AnalyticsUiState, onBack: () -> Unit, onLo
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(state.events, key = { it.id }) { event ->
-                EventCard(event = event)
+                EventCard(event = event, onClick = { onEventSelected(event.id) })
             }
 
             if (state.isLoadingEvents) {
@@ -230,12 +248,113 @@ private fun EventDetailContent(state: AnalyticsUiState, onBack: () -> Unit, onLo
 }
 
 @Composable
-private fun EventCard(event: AnalyticsEvent) {
+private fun EventFullDetailContent(state: AnalyticsUiState, onBack: () -> Unit) {
+    val event = state.selectedEvent ?: return
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(DarkPrimaryCard)
+                .clickable { onBack() }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "\u2190 Back to Events",
+                color = DarkPrimary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Event Detail",
+            color = DarkPrimary,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        if (state.isLoadingEventDetail) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Loading event detail...", color = TransparentText40)
+            }
+            return@Column
+        }
+
+        if (state.eventDetailError != null) {
+            ErrorView(message = state.eventDetailError)
+            return@Column
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            DetailRow("ID", event.id)
+            DetailRow("Event Name", event.eventName)
+            DetailRow("Event Type", event.eventType)
+            DetailRow("Source Service", event.sourceService)
+            DetailRow("User ID", event.userId ?: "-")
+            DetailRow("IP Address", event.ipAddress ?: "-")
+            DetailRow("User Agent", event.userAgent ?: "-")
+            DetailRow("Created At", event.createdAt)
+
+            if (event.properties.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Properties",
+                    color = DarkPrimary,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                event.properties.forEach { (key, value) ->
+                    DetailRow(key, value)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(DarkPrimaryCard)
+            .padding(12.dp)
+    ) {
+        Text(
+            text = label,
+            color = TransparentText40,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = value,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun EventCard(event: AnalyticsEvent, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(DarkPrimaryCard)
+            .clickable { onClick() }
             .padding(14.dp)
     ) {
         Row(
@@ -405,6 +524,20 @@ private fun TrendingCard(item: TrendingItem) {
     }
 }
 
+private fun formatTime(isoTimestamp: String): String {
+    return try {
+        val instant = java.time.LocalDateTime.parse(
+            isoTimestamp.substringBefore("Z").take(19),
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        ).toInstant(java.time.ZoneOffset.UTC)
+        java.time.ZonedDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
+            .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
+    } catch (_: Exception) {
+        val afterT = isoTimestamp.substringAfter("T", "")
+        afterT.substringBefore(".").takeIf { it.isNotEmpty() } ?: isoTimestamp
+    }
+}
+
 @Preview
 @Composable
 private fun AnalyticsViewSuccessPreview() {
@@ -430,7 +563,9 @@ private fun AnalyticsViewSuccessPreview() {
             onRefresh = {},
             onDateSelected = {},
             onBack = {},
-            onLoadNextPage = {}
+            onLoadNextPage = {},
+            onEventSelected = {},
+            onBackFromEvent = {}
         )
     }
 }
@@ -444,7 +579,9 @@ private fun AnalyticsViewLoadingPreview() {
             onRefresh = {},
             onDateSelected = {},
             onBack = {},
-            onLoadNextPage = {}
+            onLoadNextPage = {},
+            onEventSelected = {},
+            onBackFromEvent = {}
         )
     }
 }
@@ -462,22 +599,10 @@ private fun AnalyticsViewAccessDeniedPreview() {
             onRefresh = {},
             onDateSelected = {},
             onBack = {},
-            onLoadNextPage = {}
+            onLoadNextPage = {},
+            onEventSelected = {},
+            onBackFromEvent = {}
         )
-    }
-}
-
-private fun formatTime(isoTimestamp: String): String {
-    return try {
-        val instant = java.time.LocalDateTime.parse(
-            isoTimestamp.substringBefore("Z").take(19),
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-        ).toInstant(java.time.ZoneOffset.UTC)
-        java.time.ZonedDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-            .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
-    } catch (_: Exception) {
-        val afterT = isoTimestamp.substringAfter("T", "")
-        afterT.substringBefore(".").takeIf { it.isNotEmpty() } ?: isoTimestamp
     }
 }
 
@@ -500,7 +625,39 @@ private fun AnalyticsViewDetailPreview() {
             onRefresh = {},
             onDateSelected = {},
             onBack = {},
-            onLoadNextPage = {}
+            onLoadNextPage = {},
+            onEventSelected = {},
+            onBackFromEvent = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AnalyticsViewEventDetailPreview() {
+    MaterialTheme {
+        AnalyticsViewContent(
+            state = AnalyticsUiState(
+                isLoading = false,
+                accessGranted = true,
+                selectedEvent = AnalyticsEvent(
+                    id = "abc-123",
+                    eventType = "click",
+                    eventName = "download_apk",
+                    sourceService = "neostore",
+                    userId = "user-uuid",
+                    ipAddress = "192.168.1.1",
+                    userAgent = "Mozilla/5.0",
+                    properties = mapOf("version" to "1.8.0", "platform" to "android"),
+                    createdAt = "2026-06-26T10:00:00Z"
+                )
+            ),
+            onRefresh = {},
+            onDateSelected = {},
+            onBack = {},
+            onLoadNextPage = {},
+            onEventSelected = {},
+            onBackFromEvent = {}
         )
     }
 }

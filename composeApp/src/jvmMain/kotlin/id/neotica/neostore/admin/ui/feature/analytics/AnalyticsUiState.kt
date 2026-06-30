@@ -15,7 +15,11 @@ data class AnalyticsUiState(
     val isLoadingEvents: Boolean = false,
     val errorEvents: String? = null,
     val eventsPage: Int = 1,
-    val eventsTotalPages: Int = 1
+    val eventsTotalPages: Int = 1,
+    val selectedEvent: AnalyticsEvent? = null,
+    val isLoadingEventDetail: Boolean = false,
+    val eventDetailError: String? = null
 ) {
     val isShowingDetail: Boolean get() = selectedDate != null
+    val isShowingEventDetail: Boolean get() = selectedEvent != null
 }

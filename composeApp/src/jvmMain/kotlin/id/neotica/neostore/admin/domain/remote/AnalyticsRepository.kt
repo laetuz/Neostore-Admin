@@ -28,4 +28,6 @@ interface AnalyticsRepository {
         sourceService: String? = null,
         limit: Int = 10
     ): Result<List<TrendingItem>>
+
+    suspend fun getEventById(id: String): Result<AnalyticsEvent>
 }

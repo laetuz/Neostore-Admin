@@ -69,4 +69,11 @@ class AnalyticsRepositoryImpl(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    override suspend fun getEventById(id: String): Result<AnalyticsEvent> = try {
+        val response = client.get("$BASE_URL/metrics/analytics/events/$id")
+        Result.success(response.body())
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }
