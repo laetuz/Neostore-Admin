@@ -1,6 +1,6 @@
 package id.neotica.neostore.admin.ui.feature.detailapp
 
-import kotlinx.serialization.SerialName
+import id.neotica.neostore.admin.domain.model.AppVersionResponse
 
 data class DetailAppUiState(
     val isLoading: Boolean = false,
@@ -8,7 +8,9 @@ data class DetailAppUiState(
     val title: String = "",
     val description: String = "",
     val category: String = "",
-    @SerialName("icon_url")
     val iconUrl: String = "",
+    val githubRepo: String = "",
+    val lastGithubTag: String = "",
+    val versions: List<AppVersionResponse> = emptyList(),
     val statusMessage: String = ""
 )

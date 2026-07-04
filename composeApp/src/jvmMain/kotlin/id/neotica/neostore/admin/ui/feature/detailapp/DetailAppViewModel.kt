@@ -21,6 +21,7 @@ class DetailAppViewModel(
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
     fun setCategory(category: String) = _uiState.update { it.copy(category = category) }
     fun setIconUrl(iconUrl: String) = _uiState.update { it.copy(iconUrl = iconUrl) }
+    fun setGithubRepo(githubRepo: String) = _uiState.update { it.copy(githubRepo = githubRepo) }
 
     fun clear() = _uiState.update { DetailAppUiState() }
 
@@ -35,7 +36,10 @@ class DetailAppViewModel(
                 title = data.title,
                 description = data.description,
                 category = data.category,
-                iconUrl = data.iconUrl ?: ""
+                iconUrl = data.iconUrl ?: "",
+                githubRepo = data.githubRepo ?: "",
+                lastGithubTag = data.lastGithubTag ?: "",
+                versions = data.versions
             ) }
         }
             .onFailure { error ->
@@ -58,7 +62,8 @@ class DetailAppViewModel(
                 title = currentState.title,
                 description = currentState.description,
                 category = currentState.category,
-                iconUrl = currentState.iconUrl
+                iconUrl = currentState.iconUrl,
+                githubRepo = currentState.githubRepo.ifBlank { null }
             )
 
             val updateResult = repo.updateApp(currentState.packageName, updateAppRequest)
@@ -66,6 +71,37 @@ class DetailAppViewModel(
             updateResult.onSuccess {
                 _uiState.update { it.copy(isLoading = false, statusMessage = "Updated.") }
             }.onFailure { error -> _uiState.update { it.copy(isLoading = false, statusMessage = "Failed updating app: $error") } }
+        }
+    }
+
+    fun resetGithubTag() {
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank()) {
+            _uiState.update { it.copy(statusMessage = "No package name loaded.") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, statusMessage = "Resetting tag...") }
+            val result = repo.resetGithubTag(packageName)
+            result.onSuccess {
+                _uiState.update { it.copy(isLoading = false, statusMessage = "Tag reset successfully.") }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isLoading = false, statusMessage = "Failed resetting tag: $error") }
+            }
+        }
+    }
+
+    fun deleteVersion(versionId: String) {
+        val packageName = _uiState.value.packageName
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, statusMessage = "Deleting version...") }
+            val result = repo.deleteVersion(packageName, versionId)
+            result.onSuccess {
+                val updated = _uiState.value.versions.filter { it.id != versionId }
+                _uiState.update { it.copy(isLoading = false, statusMessage = "Version deleted.", versions = updated) }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isLoading = false, statusMessage = "Failed deleting version: $error") }
+            }
         }
     }
 }

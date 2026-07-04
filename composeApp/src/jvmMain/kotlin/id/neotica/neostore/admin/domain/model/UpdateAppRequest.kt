@@ -9,5 +9,7 @@ data class UpdateAppRequest(
     val description: String,
     val category: String = "",
     @SerialName("icon_url")
-    val iconUrl: String = ""
+    val iconUrl: String = "",
+    @SerialName("github_repo")
+    val githubRepo: String? = null
 )

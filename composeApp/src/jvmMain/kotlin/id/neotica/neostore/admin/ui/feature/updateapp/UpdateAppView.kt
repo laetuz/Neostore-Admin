@@ -40,6 +40,7 @@ fun UpdateAppView(
         onCategoryChange = viewModel::setCategory,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
+        onGithubRepoChange = viewModel::setGithubRepo,
         onCheckApp = viewModel::getAppDetail,
         onClear = viewModel::clear,
         onUpdate = viewModel::updateApp,
@@ -54,6 +55,7 @@ private fun UpdateAppViewContent(
     onCategoryChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
+    onGithubRepoChange: (String) -> Unit,
     onCheckApp: () -> Unit,
     onClear: () -> Unit,
     onUpdate: () -> Unit,
@@ -150,6 +152,15 @@ private fun UpdateAppViewContent(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                TextField(
+                    value = uiState.githubRepo,
+                    onValueChange = onGithubRepoChange,
+                    label = { Text("GitHub Repo") },
+                    placeholder = { Text("laetuz/RepoName", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
@@ -182,6 +193,7 @@ private fun UpdateAppViewPreview() {
         onCategoryChange = {},
         onDescriptionChange = {},
         onIconUrlChange = {},
+        onGithubRepoChange = {},
         onCheckApp = {},
         onClear = {},
         onUpdate = {},

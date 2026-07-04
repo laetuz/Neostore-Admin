@@ -16,6 +16,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -267,6 +268,30 @@ class FileRepositoryImpl(
         } else {
             Result.failure(Exception("Form Upload Failed: ${response.status}"))
         }
+    }
+
+    override suspend fun deleteVersion(packageName: String, versionId: String): Result<String> = try {
+        val url = "$BASE_URL/neostore/admin/apps/${packageName}/versions/${versionId}"
+        val response = httpClient.delete(url)
+        if (response.status.isSuccess()) {
+            Result.success(response.bodyAsText())
+        } else {
+            Result.failure(Exception("Failed to delete version: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun resetGithubTag(packageName: String): Result<String> = try {
+        val url = "$BASE_URL/neostore/admin/apps/${packageName}/github/reset-tag"
+        val response = httpClient.post(url)
+        if (response.status.isSuccess()) {
+            Result.success(response.bodyAsText())
+        } else {
+            Result.failure(Exception("Failed to reset tag: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     private fun File.readChannel(): ByteReadChannel = this.inputStream().toByteReadChannel()

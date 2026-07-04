@@ -20,6 +20,7 @@ class UpdateAppViewModel(
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
     fun setCategory(category: String) = _uiState.update { it.copy(category = category) }
     fun setIconUrl(iconUrl: String) = _uiState.update { it.copy(iconUrl = iconUrl) }
+    fun setGithubRepo(githubRepo: String) = _uiState.update { it.copy(githubRepo = githubRepo) }
 
     fun clear() = _uiState.update { UpdateAppUiState() }
 
@@ -32,7 +33,8 @@ class UpdateAppViewModel(
                 title = data.title,
                 description = data.description,
                 category = data.category,
-                iconUrl = data.iconUrl ?: ""
+                iconUrl = data.iconUrl ?: "",
+                githubRepo = data.githubRepo ?: ""
             ) }
         }
             .onFailure { error ->
@@ -55,7 +57,8 @@ class UpdateAppViewModel(
                 title = currentState.title,
                 description = currentState.description,
                 category = currentState.category,
-                iconUrl = currentState.iconUrl
+                iconUrl = currentState.iconUrl,
+                githubRepo = currentState.githubRepo.ifBlank { null }
             )
 
             val updateResult = repo.updateApp(currentState.packageName, updateAppRequest)
