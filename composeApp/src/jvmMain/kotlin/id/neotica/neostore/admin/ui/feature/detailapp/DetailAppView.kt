@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,7 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.domain.model.AppVersionResponse
+import id.neotica.neostore.admin.domain.model.category.response.Category
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.DarkPrimaryCard
 import id.neotica.neostore.admin.ui.components.NegativePrimary
@@ -46,6 +49,7 @@ fun DetailAppView(
     onClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val openCategoryTrigger by viewModel.openCategoryTrigger.collectAsState()
 
     LaunchedEffect(packageName) {
         viewModel.clear()
@@ -53,11 +57,31 @@ fun DetailAppView(
         viewModel.getAppDetail()
     }
 
+    DisposableEffect(Unit) {
+        val dispatcher = java.awt.KeyEventDispatcher { event ->
+            if (event.id == java.awt.event.KeyEvent.KEY_PRESSED) {
+                when {
+                    event.keyChar == 'c' && event.modifiersEx == 0 -> {
+                        viewModel.requestOpenCategory(); true
+                    }
+                    event.keyCode == java.awt.event.KeyEvent.VK_ENTER &&
+                        (event.isMetaDown || event.isControlDown) -> {
+                        viewModel.updateApp(); true
+                    }
+                    else -> false
+                }
+            } else false
+        }
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(dispatcher)
+        onDispose { java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher) }
+    }
+
     DetailAppViewContent(
         uiState = uiState,
+        openCategoryTrigger = openCategoryTrigger,
         onPackageNameChange = viewModel::setPackageName,
         onTitleChange = viewModel::setTitle,
-        onCategoryChange = viewModel::setCategory,
+        onCategoryChange = viewModel::setCategorySlug,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
         onGithubRepoChange = viewModel::setGithubRepo,
@@ -73,9 +97,10 @@ fun DetailAppView(
 @Composable
 private fun DetailAppViewContent(
     uiState: DetailAppUiState,
+    openCategoryTrigger: Int = 0,
     onPackageNameChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
-    onCategoryChange: (String) -> Unit,
+    onCategoryChange: (String?) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
     onGithubRepoChange: (String) -> Unit,
@@ -162,12 +187,11 @@ private fun DetailAppViewContent(
                         )
                     }
 
-                    TextField(
-                        value = uiState.category,
-                        onValueChange = onCategoryChange,
-                        label = { Text("Category") },
-                        placeholder = { Text("APPLICATION", color = PurpleGrey40) },
-                        singleLine = true,
+                    CategorySelect(
+                        categories = uiState.categories,
+                        selectedSlug = uiState.categorySlug,
+                        onSelect = onCategoryChange,
+                        openTrigger = openCategoryTrigger,
                         modifier = Modifier.fillMaxWidth(),
                     )
 
@@ -298,7 +322,11 @@ private fun DetailAppViewPreview() {
         uiState = DetailAppUiState(
             packageName = "id.neotica.neomart",
             title = "Neomart",
-            category = "APPLICATION",
+            categorySlug = "application",
+            categories = listOf(
+                Category("application", "Application"),
+                Category("game", "Game"),
+            ),
             description = "A marketplace app for legacy Android devices.",
             iconUrl = "https://storage.example.com/buckets/neostore/id.neotica.neomart/icon.jpg",
             versions = listOf(

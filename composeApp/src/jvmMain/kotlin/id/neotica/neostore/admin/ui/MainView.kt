@@ -36,6 +36,8 @@ import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
 import id.neotica.neostore.admin.ui.navigation.AppNavigationRail
 import id.neotica.neostore.admin.ui.feature.analytics.AnalyticsView
+import id.neotica.neostore.admin.ui.feature.categories.CategoriesView
+import id.neotica.neostore.admin.ui.feature.info.InfoView
 import id.neotica.neostore.admin.ui.navigation.MainScreenType
 
 @Composable
@@ -93,7 +95,9 @@ fun MainView(
                 KeyEvent.VK_2 to MainScreenType.REGISTRAR,
                 KeyEvent.VK_3 to MainScreenType.UPDATER,
                 KeyEvent.VK_4 to MainScreenType.FEEDS,
-                KeyEvent.VK_5 to MainScreenType.ANALYTICS,
+                KeyEvent.VK_5 to MainScreenType.CATEGORIES,
+                KeyEvent.VK_6 to MainScreenType.ANALYTICS,
+                KeyEvent.VK_7 to MainScreenType.INFO,
             )
 
             DisposableEffect(Unit) {
@@ -151,6 +155,8 @@ fun MainView(
                             onClick = { screenType = MainScreenType.FEEDS }
                         )
                         MainScreenType.ANALYTICS -> AnalyticsView()
+                        MainScreenType.CATEGORIES -> CategoriesView()
+                        MainScreenType.INFO -> InfoView()
                     }
                 }
             }

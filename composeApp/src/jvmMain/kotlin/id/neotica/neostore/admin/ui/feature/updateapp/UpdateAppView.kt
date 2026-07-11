@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import id.neotica.neostore.admin.domain.model.category.response.Category
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
@@ -37,7 +39,7 @@ fun UpdateAppView(
         uiState = uiState,
         onPackageNameChange = viewModel::setPackageName,
         onTitleChange = viewModel::setTitle,
-        onCategoryChange = viewModel::setCategory,
+        onCategoryChange = viewModel::setCategorySlug,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
         onGithubRepoChange = viewModel::setGithubRepo,
@@ -52,7 +54,7 @@ private fun UpdateAppViewContent(
     uiState: UpdateAppUiState,
     onPackageNameChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
-    onCategoryChange: (String) -> Unit,
+    onCategoryChange: (String?) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
     onGithubRepoChange: (String) -> Unit,
@@ -125,12 +127,10 @@ private fun UpdateAppViewContent(
                     )
                 }
 
-                TextField(
-                    value = uiState.category,
-                    onValueChange = onCategoryChange,
-                    label = { Text("Category") },
-                    placeholder = { Text("APPLICATION", color = PurpleGrey40) },
-                    singleLine = true,
+                CategorySelect(
+                    categories = uiState.categories,
+                    selectedSlug = uiState.categorySlug,
+                    onSelect = onCategoryChange,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -183,7 +183,11 @@ private fun UpdateAppViewPreview() {
         uiState = UpdateAppUiState(
             packageName = "id.neotica.neomart",
             title = "Neomart",
-            category = "APPLICATION",
+            categorySlug = "application",
+            categories = listOf(
+                Category("application", "Application"),
+                Category("game", "Game"),
+            ),
             description = "A marketplace app for legacy Android devices.",
             iconUrl = "https://storage.example.com/buckets/neostore/id.neotica.neomart/icon.jpg",
             statusMessage = "",

@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCard
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
@@ -138,12 +139,11 @@ fun RegisterAppView(
                 singleLine = true
             )
         }
-        TextField(
-            value = uiState.category,
-            onValueChange = { viewModel.setCategory(it) },
-            label = { Text("Category") },
-            placeholder = { Text("APPLICATION", color = PurpleGrey40) },
-            singleLine = true
+        CategorySelect(
+            categories = uiState.categories,
+            selectedSlug = uiState.categorySlug,
+            onSelect = { viewModel.setCategorySlug(it) },
+            modifier = Modifier.fillMaxWidth(),
         )
         TextField(
             value = uiState.description,

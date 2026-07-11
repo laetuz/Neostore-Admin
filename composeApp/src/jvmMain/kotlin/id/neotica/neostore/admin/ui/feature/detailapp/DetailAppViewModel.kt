@@ -3,39 +3,60 @@ package id.neotica.neostore.admin.ui.feature.detailapp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.model.UpdateAppRequest
+import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class DetailAppViewModel(
-    private val repo: FileRepository
+    private val repo: FileRepository,
+    private val categoriesRepo: CategoriesRepository
 ): ViewModel() {
     private val _uiState = MutableStateFlow(DetailAppUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _openCategoryTrigger = MutableStateFlow(0)
+    val openCategoryTrigger = _openCategoryTrigger.asStateFlow()
+
+    fun requestOpenCategory() { _openCategoryTrigger.update { it + 1 } }
+
+    init { loadCategories() }
+
+    fun loadCategories() = viewModelScope.launch {
+        categoriesRepo.getCategories().onSuccess { cats ->
+            _uiState.update { it.copy(categories = cats) }
+        }
+    }
+
     fun setPackageName(packageName: String) = _uiState.update { it.copy(packageName = packageName) }
     fun setTitle(title: String) = _uiState.update { it.copy(title = title) }
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
-    fun setCategory(category: String) = _uiState.update { it.copy(category = category) }
+    fun setCategorySlug(slug: String?) = _uiState.update { it.copy(categorySlug = slug) }
     fun setIconUrl(iconUrl: String) = _uiState.update { it.copy(iconUrl = iconUrl) }
     fun setGithubRepo(githubRepo: String) = _uiState.update { it.copy(githubRepo = githubRepo) }
 
-    fun clear() = _uiState.update { DetailAppUiState() }
+    fun clear() {
+        _uiState.update { DetailAppUiState() }
+        loadCategories()
+    }
 
     fun getAppDetail() = viewModelScope.launch {
         _uiState.update { it.copy(isLoading = true) }
-        delay(100)
+        delay(100.milliseconds)
         val response = repo.getAppDetail(_uiState.value.packageName)
 
         response.onSuccess { data ->
+            val categories = _uiState.value.categories
+            val matching = categories.firstOrNull { it.slug.equals(data.category, ignoreCase = true) }
             _uiState.update { it.copy(
                 isLoading = false,
                 title = data.title,
                 description = data.description,
-                category = data.category,
+                categorySlug = matching?.slug ?: data.category,
                 iconUrl = data.iconUrl ?: "",
                 githubRepo = data.githubRepo ?: "",
                 lastGithubTag = data.lastGithubTag ?: "",
@@ -61,7 +82,7 @@ class DetailAppViewModel(
             val updateAppRequest = UpdateAppRequest(
                 title = currentState.title,
                 description = currentState.description,
-                category = currentState.category,
+                category = currentState.categorySlug ?: "",
                 iconUrl = currentState.iconUrl,
                 githubRepo = currentState.githubRepo.ifBlank { null }
             )

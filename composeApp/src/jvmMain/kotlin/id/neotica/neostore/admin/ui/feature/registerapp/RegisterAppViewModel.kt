@@ -3,6 +3,7 @@ package id.neotica.neostore.admin.ui.feature.registerapp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
+import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,17 +13,29 @@ import net.dongliu.apk.parser.ApkFile
 import java.io.File
 
 class RegisterAppViewModel(
-    private val repo: FileRepository
+    private val repo: FileRepository,
+    private val categoriesRepo: CategoriesRepository
 ): ViewModel() {
     private val _uiState = MutableStateFlow(RegisterAppUiState())
     val uiState = _uiState.asStateFlow()
 
+    init { loadCategories() }
+
+    fun loadCategories() = viewModelScope.launch {
+        categoriesRepo.getCategories().onSuccess { cats ->
+            _uiState.update { it.copy(categories = cats) }
+        }
+    }
+
     fun setPackageName(packageName: String) = _uiState.update { it.copy(packageName = packageName) }
     fun setTitle(title: String) = _uiState.update { it.copy(title = title) }
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
-    fun setCategory(category: String) = _uiState.update { it.copy(category = category) }
+    fun setCategorySlug(slug: String?) = _uiState.update { it.copy(categorySlug = slug) }
 
-    fun clear() = _uiState.update { RegisterAppUiState() }
+    fun clear() {
+        _uiState.update { RegisterAppUiState() }
+        loadCategories()
+    }
     fun setPath(path: String) {
         _uiState.update { it.copy(filePath = path, statusMessage = "Analyzing APK for Registration...") }
 
@@ -112,7 +125,7 @@ class RegisterAppViewModel(
                 packageName = currentState.packageName,
                 title = currentState.title,
                 description = currentState.description,
-                category = currentState.category,
+                category = currentState.categorySlug ?: "",
             )
 
             val registerResult = repo.registerApp(registerRequest)
