@@ -294,5 +294,17 @@ class FileRepositoryImpl(
         Result.failure(e)
     }
 
+    override suspend fun unregisterApp(packageName: String): Result<String> = try {
+        val url = "$BASE_URL/neostore/admin/apps/$packageName"
+        val response = httpClient.delete(url)
+        if (response.status.isSuccess()) {
+            Result.success(response.bodyAsText())
+        } else {
+            Result.failure(Exception("Failed to unregister: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     private fun File.readChannel(): ByteReadChannel = this.inputStream().toByteReadChannel()
 }

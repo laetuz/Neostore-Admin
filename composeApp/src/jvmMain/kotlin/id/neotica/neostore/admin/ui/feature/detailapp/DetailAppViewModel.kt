@@ -5,12 +5,15 @@ import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.model.UpdateAppRequest
 import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
+import java.io.File
 
 class DetailAppViewModel(
     private val repo: FileRepository,
@@ -92,6 +95,56 @@ class DetailAppViewModel(
             updateResult.onSuccess {
                 _uiState.update { it.copy(isLoading = false, statusMessage = "Updated.") }
             }.onFailure { error -> _uiState.update { it.copy(isLoading = false, statusMessage = "Failed updating app: $error") } }
+        }
+    }
+
+    fun uploadIcon(file: File) {
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank()) {
+            _uiState.update { it.copy(statusMessage = "No package name loaded.") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUploadingIcon = true, statusMessage = "Uploading icon...") }
+            val uploadResult = withContext(Dispatchers.IO) {
+                repo.uploadIcon(file, packageName)
+            }
+            uploadResult.onSuccess {
+                val iconUrl = "/buckets/neostore/$packageName/icon.jpg"
+                _uiState.update { it.copy(iconUrl = iconUrl, isUploadingIcon = false, statusMessage = "Icon uploaded. Updating app...") }
+                val updateRequest = UpdateAppRequest(
+                    title = _uiState.value.title,
+                    description = _uiState.value.description,
+                    category = _uiState.value.categorySlug ?: "",
+                    iconUrl = iconUrl,
+                    githubRepo = _uiState.value.githubRepo.ifBlank { null }
+                )
+                repo.updateApp(packageName, updateRequest).onSuccess {
+                    _uiState.update { it.copy(isLoading = false, statusMessage = "Icon updated successfully.") }
+                }.onFailure { error ->
+                    _uiState.update { it.copy(isLoading = false, statusMessage = "Icon uploaded but failed to update app: $error") }
+                }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isUploadingIcon = false, statusMessage = "Icon upload failed: $error") }
+            }
+        }
+    }
+
+    fun requestUnregister() = _uiState.update { it.copy(showUnregisterConfirm = true) }
+
+    fun cancelUnregister() = _uiState.update { it.copy(showUnregisterConfirm = false) }
+
+    fun unregisterApp(onSuccess: () -> Unit) {
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank()) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, statusMessage = "Unregistering...") }
+            repo.unregisterApp(packageName).onSuccess {
+                _uiState.update { it.copy(isLoading = false, statusMessage = "App unregistered.") }
+                onSuccess()
+            }.onFailure { error ->
+                _uiState.update { it.copy(isLoading = false, showUnregisterConfirm = false, statusMessage = "Failed: $error") }
+            }
         }
     }
 

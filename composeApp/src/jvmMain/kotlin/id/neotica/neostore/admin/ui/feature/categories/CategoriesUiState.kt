@@ -12,5 +12,6 @@ data class CategoriesUiState(
     val editingName: String = "",
     val editingParentSlug: String? = null,
     val expandedSlug: String? = null,
+    val showCollections: Boolean = false,
     val statusMessage: String = ""
 )

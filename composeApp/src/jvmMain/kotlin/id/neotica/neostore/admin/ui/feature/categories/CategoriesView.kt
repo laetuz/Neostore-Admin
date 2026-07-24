@@ -59,6 +59,8 @@ fun CategoriesView(
         onSaveEdit = viewModel::saveEdit,
         onToggleExpand = viewModel::toggleExpand,
         onDelete = viewModel::deleteCategory,
+        onNavigateToCollections = viewModel::navigateToCollections,
+        onNavigateToCategories = viewModel::navigateToCategories,
     )
 }
 
@@ -76,6 +78,8 @@ private fun CategoriesViewContent(
     onSaveEdit: () -> Unit,
     onToggleExpand: (String) -> Unit,
     onDelete: (String) -> Unit,
+    onNavigateToCollections: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -85,11 +89,36 @@ private fun CategoriesViewContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Categories",
-            style = MaterialTheme.typography.headlineSmall,
-            color = DarkPrimary,
-        )
+        if (state.showCollections) {
+            CollectionsContent(onBack = onNavigateToCategories)
+            return@Column
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Categories",
+                style = MaterialTheme.typography.headlineSmall,
+                color = DarkPrimary,
+            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkPrimaryTransparent40)
+                    .clickable(onClick = onNavigateToCollections)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Collections",
+                    color = DarkPrimary,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
 
         if (state.isLoading) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -283,6 +312,34 @@ private fun CategoryCard(
                     Spacer(modifier = Modifier.height(6.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CollectionsContent(onBack: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkPrimaryTransparent40)
+                    .clickable(onClick = onBack)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("← Back", color = DarkPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+            Text("Collections", style = MaterialTheme.typography.headlineSmall, color = DarkPrimary)
+        }
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Coming soon", color = TransparentText40, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

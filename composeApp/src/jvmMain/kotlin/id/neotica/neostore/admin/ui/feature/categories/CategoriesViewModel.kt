@@ -86,6 +86,10 @@ class CategoriesViewModel(
         }
     }
 
+    fun navigateToCollections() = _uiState.update { it.copy(showCollections = true) }
+
+    fun navigateToCategories() = _uiState.update { it.copy(showCollections = false) }
+
     fun deleteCategory(slug: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(statusMessage = "Deleting...") }

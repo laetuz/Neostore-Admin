@@ -41,6 +41,7 @@ fun InfoView() {
 
         KeyboardShortcutsCard()
         BuildInfoCard()
+        FeaturesCard()
         TechStackCard()
         AboutCard()
     }
@@ -56,18 +57,16 @@ private fun KeyboardShortcutsCard() {
             SectionTitle("Keyboard Shortcuts")
 
             ShortcutRow("⌘/Ctrl + 1", "Upload tab")
-            ShortcutRow("⌘/Ctrl + 2", "Register tab")
-            ShortcutRow("⌘/Ctrl + 3", "Update tab")
-            ShortcutRow("⌘/Ctrl + 4", "Feed tab")
-            ShortcutRow("⌘/Ctrl + 5", "Categories tab")
-            ShortcutRow("⌘/Ctrl + 6", "Analytics tab")
-            ShortcutRow("⌘/Ctrl + 7", "Info tab")
+            ShortcutRow("⌘/Ctrl + 2", "Feed tab")
+            ShortcutRow("⌘/Ctrl + 3", "Categories tab")
+            ShortcutRow("⌘/Ctrl + 4", "Analytics tab")
+            ShortcutRow("⌘/Ctrl + 5", "Info tab")
             ShortcutRow("Escape", "Back to Feed (from Detail)")
             ShortcutRow("C", "Open category dropdown (in Detail)")
             ShortcutRow("⌘/Ctrl + Enter", "Update app (in Detail)")
             Spacer(modifier = Modifier.height(4.dp))
             SectionTitle("Category dropdown (when open)")
-            ShortcutRow("1 – 9", "Select root category by index")
+            ShortcutRow("1 – 5", "Select root category by index")
             ShortcutRow("Backspace / 0", "Go back to root list (in drill view)")
             ShortcutRow("1 (in drill)", "Select parent category")
             ShortcutRow("2+ (in drill)", "Select child category")
@@ -83,11 +82,31 @@ private fun BuildInfoCard() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SectionTitle("Build")
-            InfoRow("Version", "1.9.2")
+            InfoRow("Version", "1.11.0")
             InfoRow("Package", "Neostore Admin")
             InfoRow("Kotlin", "2.3.0")
             InfoRow("Compose", "1.10.0")
             InfoRow("JDK", "21+")
+        }
+    }
+}
+
+@Composable
+private fun FeaturesCard() {
+    NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            SectionTitle("Features")
+            FeatureItem("APK Upload & Publish: drag-drop, bulk queue, auto-registration fallback")
+            FeatureItem("Categories CRUD: expandable tree, inline edit/delete, CategorySelect dropdown")
+            FeatureItem("App Detail & Version Management: edit metadata, delete versions, reset GitHub tag")
+            FeatureItem("Manual Icon Upload: file chooser, upload to S3, auto-persist via update API")
+            FeatureItem("Unregister App: removes app record and all S3 files with confirmation")
+            FeatureItem("Analytics Dashboard: daily counts, event drill-down, trending events, event detail")
+            FeatureItem("Collections Management: placeholder")
+            FeatureItem("Keyboard Shortcuts: global AWT-level")
         }
     }
 }
@@ -157,6 +176,17 @@ private fun ShortcutRow(key: String, description: String) {
             color = TransparentText40,
             style = MaterialTheme.typography.bodySmall,
         )
+    }
+}
+
+@Composable
+private fun FeatureItem(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("•", color = DarkPrimary, style = MaterialTheme.typography.bodySmall)
+        Text(text, color = TransparentText40, style = MaterialTheme.typography.bodySmall)
     }
 }
 

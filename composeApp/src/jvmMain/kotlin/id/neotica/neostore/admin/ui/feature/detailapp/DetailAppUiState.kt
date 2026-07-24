@@ -14,5 +14,7 @@ data class DetailAppUiState(
     val githubRepo: String = "",
     val lastGithubTag: String = "",
     val versions: List<AppVersionResponse> = emptyList(),
+    val isUploadingIcon: Boolean = false,
+    val showUnregisterConfirm: Boolean = false,
     val statusMessage: String = ""
 )

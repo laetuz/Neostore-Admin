@@ -37,4 +37,5 @@ interface FileRepository {
     suspend fun getAppDetail(packageName: String): Result<AppDetailResponse>
     suspend fun resetGithubTag(packageName: String): Result<String>
     suspend fun deleteVersion(packageName: String, versionId: String): Result<String>
+    suspend fun unregisterApp(packageName: String): Result<String>
 }

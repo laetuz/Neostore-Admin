@@ -36,11 +36,15 @@ import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.DarkPrimaryCard
+import id.neotica.neostore.admin.ui.components.DarkPrimaryTransparent40
 import id.neotica.neostore.admin.ui.components.NegativePrimary
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
 import id.neotica.neostore.admin.ui.components.TransparentText40
 import org.koin.compose.viewmodel.koinViewModel
+import java.io.File
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileNameExtensionFilter
 
 @Composable
 fun DetailAppView(
@@ -91,6 +95,10 @@ fun DetailAppView(
         onResetGithubTag = viewModel::resetGithubTag,
         onDeleteVersion = viewModel::deleteVersion,
         onBack = { onClick(); viewModel.clear() },
+        onUploadIcon = viewModel::uploadIcon,
+        onRequestUnregister = viewModel::requestUnregister,
+        onCancelUnregister = viewModel::cancelUnregister,
+        onUnregisterApp = { viewModel.unregisterApp { onClick(); viewModel.clear() } },
     )
 }
 
@@ -110,6 +118,10 @@ private fun DetailAppViewContent(
     onResetGithubTag: () -> Unit,
     onDeleteVersion: (String) -> Unit,
     onBack: () -> Unit,
+    onUploadIcon: (File) -> Unit = {},
+    onRequestUnregister: () -> Unit = {},
+    onCancelUnregister: () -> Unit = {},
+    onUnregisterApp: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -214,6 +226,33 @@ private fun DetailAppViewContent(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (uiState.isUploadingIcon) DarkPrimaryTransparent40 else DarkPrimaryTransparent40)
+                                .clickable(enabled = !uiState.isUploadingIcon) {
+                                    val chooser = JFileChooser()
+                                    chooser.dialogTitle = "Select App Icon"
+                                    chooser.fileFilter = FileNameExtensionFilter("Image files", "png", "jpg", "jpeg")
+                                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                        chooser.selectedFile?.let { onUploadIcon(it) }
+                                    }
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (uiState.isUploadingIcon) "Uploading..." else "Browse & Upload Icon",
+                                color = DarkPrimary,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+
                     TextField(
                         value = uiState.githubRepo,
                         onValueChange = onGithubRepoChange,
@@ -243,6 +282,45 @@ private fun DetailAppViewContent(
             }
 
             ButtonBasic("Reset GitHub Tag", onResetGithubTag)
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(NegativePrimary.copy(alpha = 0.2f))
+                    .clickable { onRequestUnregister() }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Unregister App", color = NegativePrimary, fontWeight = FontWeight.Bold)
+            }
+
+            if (uiState.showUnregisterConfirm) {
+                NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(
+                            text = "Are you sure? This will permanently delete the app and all its files (including S3 objects).",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ButtonBasic("Cancel", onCancelUnregister)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(NegativePrimary.copy(alpha = 0.2f))
+                                    .clickable { onUnregisterApp() }
+                                    .padding(horizontal = 14.dp, vertical = 7.dp)
+                            ) {
+                                Text("Yes, Delete", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+            }
 
             if (uiState.versions.isNotEmpty()) {
                 Text(
@@ -347,5 +425,9 @@ private fun DetailAppViewPreview() {
         onResetGithubTag = {},
         onDeleteVersion = {},
         onBack = {},
+        onUploadIcon = {},
+        onRequestUnregister = {},
+        onCancelUnregister = {},
+        onUnregisterApp = {},
     )
 }
