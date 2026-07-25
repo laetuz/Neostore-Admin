@@ -1,0 +1,394 @@
+package id.neotica.neostore.admin.ui.feature.collections
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import id.neotica.neostore.admin.domain.model.collection.response.AppCollection
+import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
+import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.DarkBackground
+import id.neotica.neostore.admin.ui.components.DarkPrimary
+import id.neotica.neostore.admin.ui.components.DarkPrimaryCard
+import id.neotica.neostore.admin.ui.components.DarkPrimaryTransparent40
+import id.neotica.neostore.admin.ui.components.NegativePrimary
+import id.neotica.neostore.admin.ui.components.NeoCardSolid
+import id.neotica.neostore.admin.ui.components.PurpleGrey40
+import id.neotica.neostore.admin.ui.components.TransparentText40
+import org.koin.compose.viewmodel.koinViewModel
+
+@Composable
+fun CollectionsView(
+    viewModel: CollectionsViewModel = koinViewModel(),
+    onBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    DisposableEffect(Unit) {
+        val dispatcher = java.awt.KeyEventDispatcher { event ->
+            if (event.id == java.awt.event.KeyEvent.KEY_PRESSED && event.keyCode == java.awt.event.KeyEvent.VK_ESCAPE) {
+                if (uiState.selectedCollection != null) {
+                    viewModel.deselectCollection()
+                } else {
+                    onBack()
+                }
+                true
+            } else false
+        }
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(dispatcher)
+        onDispose { java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher) }
+    }
+
+    if (uiState.selectedCollection != null) {
+        CollectionDetailView(
+            state = uiState,
+            onEditTitleChange = viewModel::setEditTitle,
+            onEditDescriptionChange = viewModel::setEditDescription,
+            onAddPackageNameChange = viewModel::setAddPackageName,
+            onAddSortOrderChange = viewModel::setAddSortOrder,
+            onUpdate = viewModel::updateCollection,
+            onAddApp = viewModel::addAppToCollection,
+            onRemoveApp = viewModel::removeAppFromCollection,
+            onRequestDelete = viewModel::requestDelete,
+            onCancelDelete = viewModel::cancelDelete,
+            onDelete = viewModel::deleteCollection,
+            onBack = { viewModel.deselectCollection() },
+        )
+    } else {
+        CollectionListView(
+            state = uiState,
+            onCreateTitleChange = viewModel::setCreateTitle,
+            onCreateDescriptionChange = viewModel::setCreateDescription,
+            onCreateSlugChange = viewModel::setCreateSlug,
+            onCreate = viewModel::createCollection,
+            onSelect = viewModel::selectCollection,
+            onBack = onBack,
+        )
+    }
+}
+
+@Composable
+private fun CollectionListView(
+    state: CollectionsUiState,
+    onCreateTitleChange: (String) -> Unit,
+    onCreateDescriptionChange: (String) -> Unit,
+    onCreateSlugChange: (String) -> Unit,
+    onCreate: () -> Unit,
+    onSelect: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .background(DarkBackground)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkPrimary)
+                    .clickable(onClick = onBack)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("Back", color = DarkBackground, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+            Text("Collections", style = MaterialTheme.typography.headlineSmall, color = DarkPrimary)
+        }
+
+        if (state.isLoading && state.collections.isEmpty()) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+
+        if (state.statusMessage.isNotEmpty()) {
+            Text(
+                text = state.statusMessage,
+                color = if (state.statusMessage.contains("Failed", ignoreCase = true))
+                    MaterialTheme.colorScheme.error else Color(0xFF4CAF50),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        state.collections.forEach { col ->
+            CollectionCard(collection = col, onClick = { onSelect(col.slug) })
+        }
+
+        NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Create Collection", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                TextField(
+                    value = state.createTitle,
+                    onValueChange = onCreateTitleChange,
+                    label = { Text("Title") },
+                    placeholder = { Text("Featured Apps", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextField(
+                    value = state.createDescription,
+                    onValueChange = onCreateDescriptionChange,
+                    label = { Text("Description") },
+                    placeholder = { Text("A curated collection of top apps", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextField(
+                    value = state.createSlug,
+                    onValueChange = onCreateSlugChange,
+                    label = { Text("Custom Slug (optional)") },
+                    placeholder = { Text("Auto-generated if blank", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ButtonBasic("Create", onCreate)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollectionCard(collection: AppCollection, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(DarkPrimaryCard)
+            .clickable(onClick = onClick)
+            .padding(14.dp)
+    ) {
+        Text(collection.title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+        if (collection.description.isNotBlank()) {
+            Text(collection.description, color = TransparentText40, style = MaterialTheme.typography.bodySmall,
+                maxLines = 2, modifier = Modifier.padding(top = 2.dp))
+        }
+        Text(collection.slug, color = DarkPrimaryTransparent40, style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+@Composable
+private fun CollectionDetailView(
+    state: CollectionsUiState,
+    onEditTitleChange: (String) -> Unit,
+    onEditDescriptionChange: (String) -> Unit,
+    onAddPackageNameChange: (String) -> Unit,
+    onAddSortOrderChange: (String) -> Unit,
+    onUpdate: () -> Unit,
+    onAddApp: () -> Unit,
+    onRemoveApp: (String) -> Unit,
+    onRequestDelete: () -> Unit,
+    onCancelDelete: () -> Unit,
+    onDelete: () -> Unit,
+    onBack: () -> Unit,
+) {
+    val collection = state.selectedCollection ?: return
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .background(DarkBackground)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkPrimary)
+                    .clickable(onClick = onBack)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("Back", color = DarkBackground, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+            Text(collection.title, style = MaterialTheme.typography.headlineSmall, color = DarkPrimary)
+        }
+
+        if (state.isLoading) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+
+        if (state.statusMessage.isNotEmpty()) {
+            Text(
+                text = state.statusMessage,
+                color = if (state.statusMessage.contains("Failed", ignoreCase = true))
+                    MaterialTheme.colorScheme.error else Color(0xFF4CAF50),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Edit Collection", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                TextField(
+                    value = state.editTitle,
+                    onValueChange = onEditTitleChange,
+                    label = { Text("Title") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextField(
+                    value = state.editDescription,
+                    onValueChange = onEditDescriptionChange,
+                    label = { Text("Description") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ButtonBasic("Save", onUpdate)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(NegativePrimary.copy(alpha = 0.2f))
+                            .clickable(onClick = onRequestDelete)
+                            .padding(horizontal = 14.dp, vertical = 7.dp)
+                    ) {
+                        Text("Delete Collection", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+                if (state.showDeleteConfirm) {
+                    Text("Are you sure? Apps in this collection must be removed first.", color = Color(0xFFFFCC00),
+                        style = MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(DarkPrimaryTransparent40)
+                                .clickable(onClick = onCancelDelete)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) { Text("Cancel", color = DarkPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall) }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(NegativePrimary.copy(alpha = 0.2f))
+                                .clickable(onClick = onDelete)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) { Text("Yes, Delete", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall) }
+                    }
+                }
+            }
+        }
+
+        NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Add App", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                TextField(
+                    value = state.addPackageName,
+                    onValueChange = onAddPackageNameChange,
+                    label = { Text("Package Name") },
+                    placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextField(
+                    value = state.addSortOrder,
+                    onValueChange = onAddSortOrderChange,
+                    label = { Text("Sort Order") },
+                    placeholder = { Text("0", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ButtonBasic("Add to Collection", onAddApp)
+            }
+        }
+
+        if (state.viewFeed.isNotEmpty()) {
+            Text(
+                text = "Apps (${state.viewTotal})",
+                style = MaterialTheme.typography.titleMedium,
+                color = DarkPrimary,
+                fontWeight = FontWeight.Bold,
+            )
+
+            state.viewFeed.forEach { item ->
+                CollectionAppCard(item = item, onRemove = { onRemoveApp(item.packageName) })
+            }
+        } else if (!state.isLoading) {
+            Box(Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
+                Text("No apps in this collection.", color = TransparentText40)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollectionAppCard(item: AppFeedItemResponse, onRemove: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(DarkPrimaryCard)
+            .padding(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                Text(item.packageName, color = TransparentText40, style = MaterialTheme.typography.bodySmall)
+                if (!item.description.isNullOrBlank()) {
+                    Text(item.description, color = TransparentText40.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.bodySmall, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(NegativePrimary.copy(alpha = 0.2f))
+                    .clickable(onClick = onRemove)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("Remove", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+}

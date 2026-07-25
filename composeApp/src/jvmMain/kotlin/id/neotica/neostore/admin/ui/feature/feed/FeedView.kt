@@ -13,22 +13,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Badge
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,7 +36,7 @@ import coil3.compose.SubcomposeAsyncImage
 import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.ui.components.AppPagination
 import id.neotica.neostore.admin.ui.components.ButtonBasic
-import id.neotica.neostore.admin.ui.components.DarkPrimary
+import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.NeoCard
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
 import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET_PUBLIC
@@ -67,14 +63,11 @@ fun FeedView(
 private fun FeedViewContent(
     uiState: FeedUiState,
     onSearchQueryChange: (String) -> Unit,
-    onCategoryChange: (String) -> Unit,
+    onCategoryChange: (String?) -> Unit,
     onSearch: () -> Unit,
     onPageChange: (Int) -> Unit,
     onNavigateToDetail: (AppFeedItemResponse) -> Unit,
 ) {
-    val categories = listOf("ALL", "APPLICATION", "GAME", "UTILITIES")
-    var dropdownExpanded by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -104,31 +97,13 @@ private fun FeedViewContent(
                         modifier = Modifier.weight(1f),
                     )
 
-                    Box(
-                        modifier = Modifier
-                            .clickable { dropdownExpanded = true }
-                            .border(1.dp, DarkPrimary, MaterialTheme.shapes.small)
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                    ) {
-                        Text(
-                            text = if (uiState.category.isEmpty()) "Category: ALL" else "Category: ${uiState.category}",
-                            color = DarkPrimary,
-                        )
-                        DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false },
-                        ) {
-                            categories.forEach { category ->
-                                DropdownMenuItem(
-                                    text = { Text(category) },
-                                    onClick = {
-                                        dropdownExpanded = false
-                                        onCategoryChange(category)
-                                    },
-                                )
-                            }
-                        }
-                    }
+                    CategorySelect(
+                        categories = uiState.categories,
+                        selectedSlug = uiState.category.ifEmpty { null },
+                        onSelect = onCategoryChange,
+                        label = "Category Filter",
+                        modifier = Modifier.width(240.dp),
+                    )
 
                     ButtonBasic("Search", onSearch)
                 }

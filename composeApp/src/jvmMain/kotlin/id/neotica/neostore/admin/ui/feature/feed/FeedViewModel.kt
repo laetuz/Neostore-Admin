@@ -2,26 +2,38 @@ package id.neotica.neostore.admin.ui.feature.feed
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class FeedViewModel(private val repository: FileRepository): ViewModel() {
+class FeedViewModel(
+    private val repository: FileRepository,
+    private val categoriesRepository: CategoriesRepository,
+): ViewModel() {
     private val _uiState = MutableStateFlow(FeedUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        fetchFeeds(page = 1) // Initial load
+        fetchFeeds(page = 1)
+        loadCategories()
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            categoriesRepository.getCategories().onSuccess { cats ->
+                _uiState.update { it.copy(categories = cats) }
+            }
+        }
     }
 
     fun setSearchQuery(query: String) = _uiState.update { it.copy(searchQuery = query) }
 
-    fun setCategory(category: String) {
-
+    fun setCategory(category: String?) {
         _uiState.update {
-            it.copy(category = if (category == "ALL") "" else category)
+            it.copy(category = category ?: "")
         }
         fetchFeeds(page = 1)
     }
