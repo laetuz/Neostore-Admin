@@ -52,6 +52,8 @@ class CollectionsViewModel(
     fun setCreateSlug(v: String) = _uiState.update { it.copy(createSlug = v) }
     fun setAddPackageName(v: String) = _uiState.update { it.copy(addPackageName = v) }
     fun setAddSortOrder(v: String) = _uiState.update { it.copy(addSortOrder = v.filter { it.isDigit() }) }
+    fun setAddOrganizerSlug(v: String) = _uiState.update { it.copy(addOrganizerSlug = v) }
+    fun setAddOrganizerSortOrder(v: String) = _uiState.update { it.copy(addOrganizerSortOrder = v.filter { it.isDigit() }) }
 
     fun createCollection() {
         val s = _uiState.value
@@ -139,6 +141,50 @@ class CollectionsViewModel(
             }.onFailure { e ->
                 _uiState.update { it.copy(isLoading = false, statusMessage = "Failed: ${e.message}") }
             }
+        }
+    }
+
+    fun toggleOrganizerMode() {
+        val current = _uiState.value.viewingOrganizer
+        _uiState.update { it.copy(viewingOrganizer = !current, statusMessage = "") }
+        if (!current) loadOrganizer()
+    }
+
+    fun loadOrganizer() = viewModelScope.launch {
+        _uiState.update { it.copy(isLoading = true, statusMessage = "") }
+        repo.getOrganizer().onSuccess { items ->
+            _uiState.update { it.copy(isLoading = false, organizerItems = items.sortedBy { item -> item.index }) }
+        }.onFailure { e ->
+            _uiState.update { it.copy(isLoading = false, statusMessage = "Failed: ${e.message}") }
+        }
+    }
+
+    fun addToOrganizer() {
+        val s = _uiState.value
+        if (s.addOrganizerSlug.isBlank()) {
+            _uiState.update { it.copy(statusMessage = "Collection slug is required.") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, statusMessage = "Adding...") }
+            repo.addToOrganizer(s.addOrganizerSlug, s.addOrganizerSortOrder.toIntOrNull() ?: 0)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false, addOrganizerSlug = "", addOrganizerSortOrder = "0", statusMessage = "Added to organizer.") }
+                    loadOrganizer()
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(isLoading = false, statusMessage = "Failed: ${e.message}") }
+                }
+        }
+    }
+
+    fun removeFromOrganizer(slug: String) = viewModelScope.launch {
+        _uiState.update { it.copy(isLoading = true, statusMessage = "Removing...") }
+        repo.removeFromOrganizer(slug).onSuccess {
+            _uiState.update { it.copy(isLoading = false, statusMessage = "Removed.") }
+            loadOrganizer()
+        }.onFailure { e ->
+            _uiState.update { it.copy(isLoading = false, statusMessage = "Failed: ${e.message}") }
         }
     }
 

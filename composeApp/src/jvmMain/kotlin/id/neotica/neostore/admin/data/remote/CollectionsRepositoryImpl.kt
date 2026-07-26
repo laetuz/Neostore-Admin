@@ -1,9 +1,11 @@
 package id.neotica.neostore.admin.data.remote
 
 import id.neotica.neostore.admin.domain.model.collection.request.AddAppToCollectionRequest
+import id.neotica.neostore.admin.domain.model.collection.request.AddToOrganizerRequest
 import id.neotica.neostore.admin.domain.model.collection.request.CreateCollectionRequest
 import id.neotica.neostore.admin.domain.model.collection.request.UpdateCollectionRequest
 import id.neotica.neostore.admin.domain.model.collection.response.AppCollection
+import id.neotica.neostore.admin.domain.model.collection.response.CollectionOrganizerItem
 import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.domain.model.response.PaginationResponse
 import id.neotica.neostore.admin.domain.remote.CollectionsRepository
@@ -104,6 +106,38 @@ class CollectionsRepositoryImpl(
             Result.success(response.bodyAsText())
         } else {
             Result.failure(Exception("Failed to remove app: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getOrganizer(): Result<List<CollectionOrganizerItem>> = try {
+        val response = client.get("$BASE_URL/neostore/admin/collections/organizer")
+        Result.success(response.body())
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun addToOrganizer(collectionSlug: String, sortOrder: Int): Result<Unit> = try {
+        val response = client.post("$BASE_URL/neostore/admin/collections/organizer") {
+            contentType(ContentType.Application.Json)
+            setBody(AddToOrganizerRequest(collectionSlug, sortOrder))
+        }
+        if (response.status.isSuccess()) {
+            Result.success(Unit)
+        } else {
+            Result.failure(Exception("Failed to add to organizer: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun removeFromOrganizer(slug: String): Result<Unit> = try {
+        val response = client.delete("$BASE_URL/neostore/admin/collections/organizer/$slug")
+        if (response.status.isSuccess()) {
+            Result.success(Unit)
+        } else {
+            Result.failure(Exception("Failed to remove from organizer: ${response.status}"))
         }
     } catch (e: Exception) {
         Result.failure(e)

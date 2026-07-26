@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
+import id.neotica.neostore.admin.config.BuildConfig
 import id.neotica.neostore.admin.ui.components.TransparentText40
 
 @Composable
@@ -82,7 +83,7 @@ private fun BuildInfoCard() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SectionTitle("Build")
-            InfoRow("Version", "1.12.0")
+            InfoRow("Version", BuildConfig.APP_VERSION)
             InfoRow("Package", "Neostore Admin")
             InfoRow("Kotlin", "2.3.0")
             InfoRow("Compose", "1.10.0")

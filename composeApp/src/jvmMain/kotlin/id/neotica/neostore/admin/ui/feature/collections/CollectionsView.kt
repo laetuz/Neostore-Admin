@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.domain.model.collection.response.AppCollection
+import id.neotica.neostore.admin.domain.model.collection.response.CollectionOrganizerItem
 import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.DarkBackground
@@ -51,6 +53,8 @@ fun CollectionsView(
             if (event.id == java.awt.event.KeyEvent.KEY_PRESSED && event.keyCode == java.awt.event.KeyEvent.VK_ESCAPE) {
                 if (uiState.selectedCollection != null) {
                     viewModel.deselectCollection()
+                } else if (uiState.viewingOrganizer) {
+                    viewModel.toggleOrganizerMode()
                 } else {
                     onBack()
                 }
@@ -76,6 +80,15 @@ fun CollectionsView(
             onDelete = viewModel::deleteCollection,
             onBack = { viewModel.deselectCollection() },
         )
+    } else if (uiState.viewingOrganizer) {
+        OrganizerListView(
+            state = uiState,
+            onAddSlugChange = viewModel::setAddOrganizerSlug,
+            onAddSortOrderChange = viewModel::setAddOrganizerSortOrder,
+            onAdd = viewModel::addToOrganizer,
+            onRemove = viewModel::removeFromOrganizer,
+            onBack = { viewModel.toggleOrganizerMode() },
+        )
     } else {
         CollectionListView(
             state = uiState,
@@ -84,6 +97,7 @@ fun CollectionsView(
             onCreateSlugChange = viewModel::setCreateSlug,
             onCreate = viewModel::createCollection,
             onSelect = viewModel::selectCollection,
+            onToggleOrganizer = viewModel::toggleOrganizerMode,
             onBack = onBack,
         )
     }
@@ -97,6 +111,7 @@ private fun CollectionListView(
     onCreateSlugChange: (String) -> Unit,
     onCreate: () -> Unit,
     onSelect: (String) -> Unit,
+    onToggleOrganizer: () -> Unit,
     onBack: () -> Unit,
 ) {
     Column(
@@ -122,6 +137,16 @@ private fun CollectionListView(
                 Text("Back", color = DarkBackground, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
             }
             Text("Collections", style = MaterialTheme.typography.headlineSmall, color = DarkPrimary)
+            Spacer(Modifier.weight(1f))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkPrimaryTransparent40)
+                    .clickable(onClick = onToggleOrganizer)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text("Organizer", color = DarkPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
         }
 
         if (state.isLoading && state.collections.isEmpty()) {
@@ -278,6 +303,14 @@ private fun CollectionDetailView(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                TextField(
+                    value = collection.slug,
+                    onValueChange = {},
+                    label = { Text("Slug") },
+                    readOnly = true,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ButtonBasic("Save", onUpdate)
                     Box(
@@ -347,8 +380,8 @@ private fun CollectionDetailView(
                 fontWeight = FontWeight.Bold,
             )
 
-            state.viewFeed.forEach { item ->
-                CollectionAppCard(item = item, onRemove = { onRemoveApp(item.packageName) })
+            state.viewFeed.forEachIndexed { index, item ->
+                CollectionAppCard(index = index, item = item, onRemove = { onRemoveApp(item.packageName) })
             }
         } else if (!state.isLoading) {
             Box(Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
@@ -359,7 +392,95 @@ private fun CollectionDetailView(
 }
 
 @Composable
-private fun CollectionAppCard(item: AppFeedItemResponse, onRemove: () -> Unit) {
+private fun OrganizerListView(
+    state: CollectionsUiState,
+    onAddSlugChange: (String) -> Unit,
+    onAddSortOrderChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onRemove: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .background(DarkBackground)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkPrimary)
+                    .clickable(onClick = onBack)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("Back", color = DarkBackground, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+            Text("Organizer", style = MaterialTheme.typography.headlineSmall, color = DarkPrimary)
+        }
+
+        if (state.isLoading && state.organizerItems.isEmpty()) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+
+        if (state.statusMessage.isNotEmpty()) {
+            Text(
+                text = state.statusMessage,
+                color = if (state.statusMessage.contains("Failed", ignoreCase = true))
+                    MaterialTheme.colorScheme.error else Color(0xFF4CAF50),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        state.organizerItems.forEach { item ->
+            OrganizerCard(item = item, onRemove = { onRemove(item.slug) })
+        }
+
+        if (state.organizerItems.isEmpty() && !state.isLoading) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("No items in organizer.", color = TransparentText40)
+            }
+        }
+
+        NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Add to Organizer", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                TextField(
+                    value = state.addOrganizerSlug,
+                    onValueChange = onAddSlugChange,
+                    label = { Text("Collection Slug") },
+                    placeholder = { Text("featured-apps", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextField(
+                    value = state.addOrganizerSortOrder,
+                    onValueChange = onAddSortOrderChange,
+                    label = { Text("Sort Order") },
+                    placeholder = { Text("0", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ButtonBasic("Add to Organizer", onAdd)
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrganizerCard(item: CollectionOrganizerItem, onRemove: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -374,10 +495,55 @@ private fun CollectionAppCard(item: AppFeedItemResponse, onRemove: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                Text(item.packageName, color = TransparentText40, style = MaterialTheme.typography.bodySmall)
-                if (!item.description.isNullOrBlank()) {
+                Text(item.slug, color = TransparentText40, style = MaterialTheme.typography.bodySmall)
+                if (item.description.isNotBlank()) {
                     Text(item.description, color = TransparentText40.copy(alpha = 0.7f),
                         style = MaterialTheme.typography.bodySmall, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Index: ${item.index}", color = DarkPrimary, style = MaterialTheme.typography.labelSmall)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(NegativePrimary.copy(alpha = 0.2f))
+                        .clickable(onClick = onRemove)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text("Remove", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollectionAppCard(index: Int, item: AppFeedItemResponse, onRemove: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(DarkPrimaryCard)
+            .padding(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("$index", color = DarkPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Column {
+                    Text(item.title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                    Text(item.packageName, color = TransparentText40, style = MaterialTheme.typography.bodySmall)
+                    if (!item.description.isNullOrBlank()) {
+                        Text(item.description, color = TransparentText40.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
+                    }
                 }
             }
             Box(

@@ -1,6 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.util.Properties
 
+val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "1.12.1").removePrefix("v")
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
@@ -48,7 +50,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Neostore Admin"
-            packageVersion = (System.getenv("GITHUB_REF_NAME") ?: "1.12.0").removePrefix("v")
+            packageVersion = appVersion
 
             macOS {
                 iconFile.set { rootProject.file("media/neostore-admin.icns") }
@@ -80,4 +82,5 @@ buildConfig {
     buildConfigField("String", "BASE_URL", getCleanConfig("BASE_URL"))
     buildConfigField("String", "BASE_URL_BUCKET", getCleanConfig("BASE_URL_BUCKET"))
     buildConfigField("String", "BASE_URL_BUCKET_PUBLIC", getCleanConfig("BASE_URL_BUCKET_PUBLIC"))
+    buildConfigField("String", "APP_VERSION", "\"$appVersion\"")
 }
