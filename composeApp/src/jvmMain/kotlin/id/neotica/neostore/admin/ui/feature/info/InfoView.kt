@@ -62,6 +62,7 @@ private fun KeyboardShortcutsCard() {
             ShortcutRow("⌘/Ctrl + 3", "Categories tab")
             ShortcutRow("⌘/Ctrl + 4", "Analytics tab")
             ShortcutRow("⌘/Ctrl + 5", "Info tab")
+            ShortcutRow("⌘/Ctrl + 0", "Clipboard (temporary)")
             ShortcutRow("Escape", "Back to Feed (from Detail)")
             ShortcutRow("C", "Open category dropdown (in Detail)")
             ShortcutRow("⌘/Ctrl + Enter", "Update app (in Detail)")
