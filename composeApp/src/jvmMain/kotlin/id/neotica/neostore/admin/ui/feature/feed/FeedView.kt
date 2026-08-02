@@ -4,6 +4,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -68,11 +69,14 @@ private fun FeedViewContent(
     onPageChange: (Int) -> Unit,
     onNavigateToDetail: (AppFeedItemResponse) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(start = 16.dp, end = 16.dp, top = 16.dp),
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 600.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+        ) {
         NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -84,29 +88,13 @@ private fun FeedViewContent(
                     color = Color.White,
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        placeholder = { Text("Search apps...") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-
-                    CategorySelect(
-                        categories = uiState.categories,
-                        selectedSlug = uiState.category.ifEmpty { null },
-                        onSelect = onCategoryChange,
-                        label = "Category Filter",
-                        modifier = Modifier.width(240.dp),
-                    )
-
-                    ButtonBasic("Search", onSearch)
-                }
+                SearchFilterRow(
+                    uiState = uiState,
+                    onSearchQueryChange = onSearchQueryChange,
+                    onCategoryChange = onCategoryChange,
+                    onSearch = onSearch,
+                    isCompact = isCompact,
+                )
             }
         }
 
@@ -121,7 +109,7 @@ private fun FeedViewContent(
             ) {
                 CircularProgressIndicator()
             }
-            return
+            return@BoxWithConstraints
         }
 
         if (uiState.errorMessage.isNotEmpty()) {
@@ -145,7 +133,7 @@ private fun FeedViewContent(
                     color = Color.Gray,
                 )
             }
-            return
+            return@BoxWithConstraints
         }
 
         Box(modifier = Modifier.weight(1f)) {
@@ -169,6 +157,61 @@ private fun FeedViewContent(
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
+        }
+    }
+    }
+}
+
+@Composable
+private fun SearchFilterRow(
+    uiState: FeedUiState,
+    onSearchQueryChange: (String) -> Unit,
+    onCategoryChange: (String?) -> Unit,
+    onSearch: () -> Unit,
+    isCompact: Boolean,
+) {
+    if (isCompact) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            TextField(
+                value = uiState.searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text("Search apps...") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            CategorySelect(
+                categories = uiState.categories,
+                selectedSlug = uiState.category.ifEmpty { null },
+                onSelect = onCategoryChange,
+                label = "Category Filter",
+                modifier = Modifier.fillMaxWidth(),
+            )
+            ButtonBasic("Search", onSearch)
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextField(
+                value = uiState.searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text("Search apps...") },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            CategorySelect(
+                categories = uiState.categories,
+                selectedSlug = uiState.category.ifEmpty { null },
+                onSelect = onCategoryChange,
+                label = "Category Filter",
+                modifier = Modifier.width(240.dp),
+            )
+            ButtonBasic("Search", onSearch)
         }
     }
 }

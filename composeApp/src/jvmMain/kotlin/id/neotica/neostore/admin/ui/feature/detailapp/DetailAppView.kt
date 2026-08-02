@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -123,9 +124,12 @@ private fun DetailAppViewContent(
     onCancelUnregister: () -> Unit = {},
     onUnregisterApp: () -> Unit = {},
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 600.dp
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
         Text(
             text = "\u2190 Back",
             color = Color.White,
@@ -177,27 +181,12 @@ private fun DetailAppViewContent(
                         color = Color.White,
                     )
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        TextField(
-                            value = uiState.packageName,
-                            onValueChange = onPackageNameChange,
-                            label = { Text("Package Name") },
-                            placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextField(
-                            value = uiState.title,
-                            onValueChange = onTitleChange,
-                            label = { Text("Title") },
-                            placeholder = { Text("App display name", color = PurpleGrey40) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    AppIdentityFields(
+                        uiState = uiState,
+                        onPackageNameChange = onPackageNameChange,
+                        onTitleChange = onTitleChange,
+                        isCompact = isCompact,
+                    )
 
                     CategorySelect(
                         categories = uiState.categories,
@@ -334,6 +323,61 @@ private fun DetailAppViewContent(
                     VersionCard(version = version, onDelete = { onDeleteVersion(version.id) })
                 }
             }
+        }
+    }
+    }
+}
+
+@Composable
+private fun AppIdentityFields(
+    uiState: DetailAppUiState,
+    onPackageNameChange: (String) -> Unit,
+    onTitleChange: (String) -> Unit,
+    isCompact: Boolean,
+) {
+    if (isCompact) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextField(
+                value = uiState.packageName,
+                onValueChange = onPackageNameChange,
+                label = { Text("Package Name") },
+                placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextField(
+                value = uiState.title,
+                onValueChange = onTitleChange,
+                label = { Text("Title") },
+                placeholder = { Text("App display name", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextField(
+                value = uiState.packageName,
+                onValueChange = onPackageNameChange,
+                label = { Text("Package Name") },
+                placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            TextField(
+                value = uiState.title,
+                onValueChange = onTitleChange,
+                label = { Text("Title") },
+                placeholder = { Text("App display name", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

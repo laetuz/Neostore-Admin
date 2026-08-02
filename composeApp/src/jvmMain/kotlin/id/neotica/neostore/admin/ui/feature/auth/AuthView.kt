@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -47,7 +47,7 @@ fun AuthView(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.width(400.dp),
+            modifier = Modifier.fillMaxWidth().widthIn(max = 400.dp).padding(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(

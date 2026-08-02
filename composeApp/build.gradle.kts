@@ -1,7 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.util.Properties
 
-val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "1.12.1").removePrefix("v")
+val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "1.14.0").removePrefix("v")
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -25,6 +25,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.neotoast)
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.koin)

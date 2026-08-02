@@ -1,6 +1,7 @@
 package id.neotica.neostore.admin.ui.feature.upload
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -118,14 +119,17 @@ private fun UploadViewContent(
     onClearAll: () -> Unit,
     onClearUpload: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 600.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
         Text(
             text = "Upload APK",
             style = MaterialTheme.typography.headlineSmall,
@@ -170,40 +174,14 @@ private fun UploadViewContent(
                     color = Color.White,
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    TextField(
-                        value = uiState.apkFileFolder,
-                        onValueChange = onApkFileFolderChange,
-                        label = { Text("Package Name") },
-                        placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
-                        singleLine = true,
-                        modifier = Modifier.weight(2f),
-                        trailingIcon = {
-                            if (uiState.apkFileFolder.isNotEmpty()) {
-                                ButtonBasic("Check") { onCheckLatest() }
-                            }
-                        },
-                    )
-                    TextField(
-                        value = uiState.versionName,
-                        onValueChange = onVersionNameChange,
-                        label = { Text("Version Name") },
-                        placeholder = { Text("0.0.20", color = PurpleGrey40) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextField(
-                        value = uiState.versionCode,
-                        onValueChange = onVersionCodeChange,
-                        label = { Text("Version Code") },
-                        placeholder = { Text("1", color = PurpleGrey40) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                MetadataFields(
+                    uiState = uiState,
+                    onApkFileFolderChange = onApkFileFolderChange,
+                    onVersionNameChange = onVersionNameChange,
+                    onVersionCodeChange = onVersionCodeChange,
+                    onCheckLatest = onCheckLatest,
+                    isCompact = isCompact,
+                )
 
                 TextField(
                     value = uiState.changelog,
@@ -227,27 +205,12 @@ private fun UploadViewContent(
                     color = Color.White,
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    TextField(
-                        value = uiState.minSdk,
-                        onValueChange = onMinSdkChange,
-                        label = { Text("Min SDK") },
-                        placeholder = { Text("7", color = PurpleGrey40) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                    )
-                    TextField(
-                        value = uiState.maxSdk,
-                        onValueChange = onMaxSdkChange,
-                        label = { Text("Max SDK") },
-                        placeholder = { Text("21", color = PurpleGrey40) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                    )
-                }
+                VersionInfoFields(
+                    uiState = uiState,
+                    onMinSdkChange = onMinSdkChange,
+                    onMaxSdkChange = onMaxSdkChange,
+                    isCompact = isCompact,
+                )
             }
         }
 
@@ -327,21 +290,192 @@ private fun UploadViewContent(
                 }
 
                 if (!uiState.isLoading && !uiState.isBulkProcessing && uiState.uploadQueue.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (uiState.uploadQueue.size > 1) {
-                            ButtonBasic("Start Bulk Upload", onStartBulkUpload)
-                        } else {
-                            ButtonBasic("Upload", onUpload)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        ButtonBasic("Clear Upload", onClearUpload)
-                        ButtonBasic("Clear All", onClearAll)
-                    }
+                    ActionButtons(
+                        uiState = uiState,
+                        onUpload = onUpload,
+                        onStartBulkUpload = onStartBulkUpload,
+                        onClearUpload = onClearUpload,
+                        onClearAll = onClearAll,
+                        isCompact = isCompact,
+                    )
                 }
             }
+        }
+        }
+    }
+}
+
+@Composable
+private fun MetadataFields(
+    uiState: UploadUiState,
+    onApkFileFolderChange: (String) -> Unit,
+    onVersionNameChange: (String) -> Unit,
+    onVersionCodeChange: (String) -> Unit,
+    onCheckLatest: () -> Unit,
+    isCompact: Boolean,
+) {
+    if (isCompact) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextField(
+                value = uiState.apkFileFolder,
+                onValueChange = onApkFileFolderChange,
+                label = { Text("Package Name") },
+                placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    if (uiState.apkFileFolder.isNotEmpty()) {
+                        ButtonBasic("Check") { onCheckLatest() }
+                    }
+                },
+            )
+            TextField(
+                value = uiState.versionName,
+                onValueChange = onVersionNameChange,
+                label = { Text("Version Name") },
+                placeholder = { Text("0.0.20", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextField(
+                value = uiState.versionCode,
+                onValueChange = onVersionCodeChange,
+                label = { Text("Version Code") },
+                placeholder = { Text("1", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextField(
+                value = uiState.apkFileFolder,
+                onValueChange = onApkFileFolderChange,
+                label = { Text("Package Name") },
+                placeholder = { Text("id.neotica.neomart", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.weight(2f),
+                trailingIcon = {
+                    if (uiState.apkFileFolder.isNotEmpty()) {
+                        ButtonBasic("Check") { onCheckLatest() }
+                    }
+                },
+            )
+            TextField(
+                value = uiState.versionName,
+                onValueChange = onVersionNameChange,
+                label = { Text("Version Name") },
+                placeholder = { Text("0.0.20", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            TextField(
+                value = uiState.versionCode,
+                onValueChange = onVersionCodeChange,
+                label = { Text("Version Code") },
+                placeholder = { Text("1", color = PurpleGrey40) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun VersionInfoFields(
+    uiState: UploadUiState,
+    onMinSdkChange: (String) -> Unit,
+    onMaxSdkChange: (String) -> Unit,
+    isCompact: Boolean,
+) {
+    if (isCompact) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextField(
+                value = uiState.minSdk,
+                onValueChange = onMinSdkChange,
+                label = { Text("Min SDK") },
+                placeholder = { Text("7", color = PurpleGrey40) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            TextField(
+                value = uiState.maxSdk,
+                onValueChange = onMaxSdkChange,
+                label = { Text("Max SDK") },
+                placeholder = { Text("21", color = PurpleGrey40) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TextField(
+                value = uiState.minSdk,
+                onValueChange = onMinSdkChange,
+                label = { Text("Min SDK") },
+                placeholder = { Text("7", color = PurpleGrey40) },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+            )
+            TextField(
+                value = uiState.maxSdk,
+                onValueChange = onMaxSdkChange,
+                label = { Text("Max SDK") },
+                placeholder = { Text("21", color = PurpleGrey40) },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionButtons(
+    uiState: UploadUiState,
+    onUpload: () -> Unit,
+    onStartBulkUpload: () -> Unit,
+    onClearUpload: () -> Unit,
+    onClearAll: () -> Unit,
+    isCompact: Boolean,
+) {
+    if (isCompact) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (uiState.uploadQueue.size > 1) {
+                ButtonBasic("Start Bulk Upload", onStartBulkUpload)
+            } else {
+                ButtonBasic("Upload", onUpload)
+            }
+            ButtonBasic("Clear Upload", onClearUpload)
+            ButtonBasic("Clear All", onClearAll)
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (uiState.uploadQueue.size > 1) {
+                ButtonBasic("Start Bulk Upload", onStartBulkUpload)
+            } else {
+                ButtonBasic("Upload", onUpload)
+            }
+            Spacer(Modifier.weight(1f))
+            ButtonBasic("Clear Upload", onClearUpload)
+            ButtonBasic("Clear All", onClearAll)
         }
     }
 }

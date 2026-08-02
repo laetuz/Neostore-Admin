@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -129,14 +128,16 @@ fun RegisterAppView(
                 onValueChange = { viewModel.setPackageName(it) },
                 label = { Text("Package Name") },
                 placeholder = { Text("com.something.app", color = PurpleGrey40) },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.weight(1f),
             )
             TextField(
                 value = uiState.title,
                 onValueChange = { viewModel.setTitle(it) },
                 label = { Text("Title") },
                 placeholder = { Text("com.something.app", color = PurpleGrey40) },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.weight(1f),
             )
         }
         CategorySelect(
@@ -173,7 +174,8 @@ fun RegisterAppView(
                         Text(
                             text = uiState.filePath,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.width(200.dp)
+                            maxLines = 1,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
