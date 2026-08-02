@@ -1,20 +1,29 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.util.Properties
 
-val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "1.14.0").removePrefix("v")
+val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "2.0.0").removePrefix("v")
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlin.serialization)
     id("com.github.gmazzo.buildconfig") version "5.3.5"
 }
 
 kotlin {
     jvm()
-    
+    androidTarget {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -39,6 +48,39 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.logback.classic)
+        }
+        androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
+        }
+    }
+}
+
+android {
+    namespace = "id.neotica.neostore.admin"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "id.neotica.neostore.admin"
+        minSdk = 30
+        targetSdk = 36
+        versionCode = 1
+        versionName = appVersion
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1,INDEX.LIST,DEPENDENCIES}"
         }
     }
 }

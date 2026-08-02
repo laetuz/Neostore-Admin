@@ -1,10 +1,12 @@
 [versions]
+agp = "8.9.1"
+androidx-activity = "1.9.3"
 androidx-lifecycle = "2.9.6"
 androidx-navigation3 = "1.0.0-alpha05"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.11.0"
 junit = "4.13.2"
-kotlin = "2.3.0"
+kotlin = "2.3.21"
 kotlinx-coroutines = "1.10.2"
 material3 = "1.11.0-alpha05"
 neotoast = "0.1.3"
@@ -30,6 +32,7 @@ kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-s
 
 #koin
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinMultiplatform"}
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinMultiplatform"}
 koin-compose = {module="io.insert-koin:koin-compose", version.ref = "koinMultiplatform"}
 koin-composeVM = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koinMultiplatform" }
 
@@ -43,6 +46,9 @@ ktor-client-logging = {module = "io.ktor:ktor-client-logging", version.ref = "kt
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
+#androidx
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+
 #neotoast
 neotoast = { group = "id.neotica", name = "toast", version.ref = "neotoast" }
 
@@ -51,6 +57,7 @@ jetbrains-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:naviga
 
 
 [plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
@@ -64,8 +71,7 @@ ktor = [
     "ktor-serialization-kotlinx-json",
     "ktor-client-logging",
     "ktor-client-cio",
-    "ktor-client-auth",
-    "logback-classic"
+    "ktor-client-auth"
 ]
 koin = [
     "koin-core",

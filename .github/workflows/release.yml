@@ -18,12 +18,19 @@ jobs:
           - os: macos-latest
             format: dmg
             task: packageDmg
+            artifact_path: composeApp/build/compose/binaries/**/*.dmg
           - os: windows-latest
             format: msi
             task: packageMsi
+            artifact_path: composeApp/build/compose/binaries/**/*.msi
           - os: ubuntu-latest
             format: deb
             task: packageDeb
+            artifact_path: composeApp/build/compose/binaries/**/*.deb
+          - os: ubuntu-latest
+            format: apk
+            task: :composeApp:assembleDebug
+            artifact_path: composeApp/build/outputs/apk/debug/composeApp-debug.apk
 
     env:
       BASE_URL: ${{ secrets.BASE_URL }}
@@ -50,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.format }}
-          path: composeApp/build/compose/binaries/**/*.${{ matrix.format }}
+          path: ${{ matrix.artifact_path }}
 
   release:
     name: Create Release
