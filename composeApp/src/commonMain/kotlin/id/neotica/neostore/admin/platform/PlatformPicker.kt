@@ -14,4 +14,7 @@ expect fun rememberPlatformFileDropTarget(
 expect fun rememberPlatformImagePicker(onImagePicked: (PlatformFile) -> Unit): () -> Unit
 
 @Composable
+expect fun rememberPlatformImagesPicker(onImagesPicked: (List<PlatformFile>) -> Unit): () -> Unit
+
+@Composable
 expect fun rememberPlatformFilePicker(onFilesPicked: (List<PlatformFile>) -> Unit): () -> Unit

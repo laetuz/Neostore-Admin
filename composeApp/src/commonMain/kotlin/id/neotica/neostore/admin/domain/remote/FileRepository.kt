@@ -38,4 +38,7 @@ interface FileRepository {
     suspend fun resetGithubTag(packageName: String): Result<String>
     suspend fun deleteVersion(packageName: String, versionId: String): Result<String>
     suspend fun unregisterApp(packageName: String): Result<String>
+    suspend fun uploadScreenshots(packageName: String, files: List<PlatformFile>): Result<List<String>>
+    suspend fun deleteScreenshot(packageName: String, fileUrl: String): Result<List<String>>
+    suspend fun reorderScreenshots(packageName: String, order: List<String>): Result<List<String>>
 }

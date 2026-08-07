@@ -6,6 +6,7 @@ import id.neotica.neostore.admin.domain.model.UpdateAppRequest
 import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.platform.PlatformFile
+import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET_PUBLIC
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,7 +66,8 @@ class DetailAppViewModel(
                 developer = data.developer ?: "",
                 githubRepo = data.githubRepo ?: "",
                 lastGithubTag = data.lastGithubTag ?: "",
-                versions = data.versions
+                versions = data.versions,
+                screenshots = data.screenshots.map { BASE_URL_BUCKET_PUBLIC + it }
             ) }
         }
             .onFailure { error ->
@@ -179,6 +181,66 @@ class DetailAppViewModel(
                 _uiState.update { it.copy(isLoading = false, statusMessage = "Version deleted.", versions = updated) }
             }.onFailure { error ->
                 _uiState.update { it.copy(isLoading = false, statusMessage = "Failed deleting version: $error") }
+            }
+        }
+    }
+
+    fun addScreenshots(files: List<PlatformFile>) {
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank() || files.isEmpty()) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUploadingScreenshots = true, statusMessage = "Uploading screenshots...") }
+            val result = withContext(Dispatchers.IO) {
+                repo.uploadScreenshots(packageName, files)
+            }
+            result.onSuccess { screenshots ->
+                _uiState.update { it.copy(isUploadingScreenshots = false, screenshots = screenshots, statusMessage = "Screenshots uploaded.") }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isUploadingScreenshots = false, statusMessage = "Screenshot upload failed: $error") }
+            }
+        }
+    }
+
+    fun requestDeleteScreenshot(url: String) = _uiState.update { it.copy(screenshotToDelete = url) }
+
+    fun cancelDeleteScreenshot() = _uiState.update { it.copy(screenshotToDelete = null) }
+
+    fun confirmDeleteScreenshot() {
+        val url = _uiState.value.screenshotToDelete ?: return
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank()) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(screenshotToDelete = null, isLoading = true, statusMessage = "Deleting screenshot...") }
+            val result = withContext(Dispatchers.IO) {
+                repo.deleteScreenshot(packageName, url)
+            }
+            result.onSuccess { screenshots ->
+                _uiState.update { it.copy(isLoading = false, screenshots = screenshots, statusMessage = "Screenshot deleted.") }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isLoading = false, statusMessage = "Failed deleting screenshot: $error") }
+            }
+        }
+    }
+
+    fun moveScreenshot(url: String, delta: Int) {
+        val current = _uiState.value.screenshots
+        val index = current.indexOf(url)
+        val target = index + delta
+        if (index < 0 || target !in current.indices) return
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank()) return
+        val reordered = current.toMutableList().apply {
+            removeAt(index)
+            add(target, url)
+        }
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                repo.reorderScreenshots(packageName, reordered)
+            }
+            result.onSuccess { screenshots ->
+                _uiState.update { it.copy(screenshots = screenshots, statusMessage = "Screenshots reordered.") }
+            }.onFailure { error ->
+                _uiState.update { it.copy(statusMessage = "Failed reordering screenshots: $error") }
             }
         }
     }

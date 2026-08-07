@@ -3,11 +3,14 @@ package id.neotica.neostore.admin.data.remote
 import id.neotica.neostore.admin.data.ktorClient
 import id.neotica.neostore.admin.domain.model.AppVersionRequest
 import id.neotica.neostore.admin.domain.model.AppVersionResponse
+import id.neotica.neostore.admin.domain.model.DeleteScreenshotRequest
+import id.neotica.neostore.admin.domain.model.ReorderScreenshotsRequest
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
 import id.neotica.neostore.admin.domain.model.UpdateAppRequest
 import id.neotica.neostore.admin.domain.model.response.AppDetailResponse
 import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.domain.model.response.PaginationResponse
+import id.neotica.neostore.admin.domain.model.response.ScreenshotsResponse
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.platform.PlatformFile
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
@@ -299,6 +302,73 @@ class FileRepositoryImpl(
             Result.success(response.bodyAsText())
         } else {
             Result.failure(Exception("Failed to unregister: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun uploadScreenshots(
+        packageName: String,
+        files: List<PlatformFile>
+    ): Result<List<String>> = try {
+        val url = "$BASE_URL/neostore/admin/apps/$packageName/screenshots"
+        val response = httpClient.post(url) {
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        files.forEach { file ->
+                            append("files", file.readBytes(), Headers.build {
+                                append(HttpHeaders.ContentType, "image/png")
+                                append(
+                                    HttpHeaders.ContentDisposition,
+                                    "form-data; name=\"files\"; filename=\"${file.name}\""
+                                )
+                            })
+                        }
+                    }
+                )
+            )
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body<ScreenshotsResponse>().screenshots)
+        } else {
+            Result.failure(Exception("Failed to upload screenshots: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun deleteScreenshot(
+        packageName: String,
+        fileUrl: String
+    ): Result<List<String>> = try {
+        val url = "$BASE_URL/neostore/admin/apps/$packageName/screenshots"
+        val response = httpClient.delete(url) {
+            contentType(ContentType.Application.Json)
+            setBody(DeleteScreenshotRequest(fileUrl = fileUrl))
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body<ScreenshotsResponse>().screenshots)
+        } else {
+            Result.failure(Exception("Failed to delete screenshot: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun reorderScreenshots(
+        packageName: String,
+        order: List<String>
+    ): Result<List<String>> = try {
+        val url = "$BASE_URL/neostore/admin/apps/$packageName/screenshots/reorder"
+        val response = httpClient.put(url) {
+            contentType(ContentType.Application.Json)
+            setBody(ReorderScreenshotsRequest(order = order))
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body<ScreenshotsResponse>().screenshots)
+        } else {
+            Result.failure(Exception("Failed to reorder screenshots: ${response.status}"))
         }
     } catch (e: Exception) {
         Result.failure(e)

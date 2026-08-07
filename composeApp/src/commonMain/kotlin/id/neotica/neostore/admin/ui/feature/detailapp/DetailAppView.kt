@@ -1,11 +1,13 @@
 package id.neotica.neostore.admin.ui.feature.detailapp
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,8 +29,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +46,7 @@ import id.neotica.neostore.admin.domain.model.category.response.Category
 import id.neotica.neostore.admin.platform.PlatformFile
 import id.neotica.neostore.admin.platform.installPlatformKeyDispatcher
 import id.neotica.neostore.admin.platform.rememberPlatformImagePicker
+import id.neotica.neostore.admin.platform.rememberPlatformImagesPicker
 import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkBackground
@@ -48,6 +58,10 @@ import id.neotica.neostore.admin.ui.components.NeoCardSolid
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
 import id.neotica.neostore.admin.ui.components.TransparentText40
 import org.koin.compose.viewmodel.koinViewModel
+import coil3.compose.SubcomposeAsyncImage
+import id.neotica.neostore.admin.platform.rememberPlatformFileDropTarget
+import id.neotica.neostore.admin.ui.components.NeoCard
+import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET_PUBLIC
 
 @Composable
 fun DetailAppView(
@@ -58,6 +72,13 @@ fun DetailAppView(
     val uiState by viewModel.uiState.collectAsState()
     val openCategoryTrigger by viewModel.openCategoryTrigger.collectAsState()
 
+    var isDraggingScreenshots by remember { mutableStateOf(false) }
+    val dropScreenshotsTarget = rememberPlatformFileDropTarget(
+        onDragStarted = { isDraggingScreenshots = true },
+        onDragEnded = { isDraggingScreenshots = false },
+        onFilesDropped = { files -> viewModel.addScreenshots(files) },
+    )
+
     LaunchedEffect(packageName) {
         viewModel.clear()
         viewModel.setPackageName(packageName)
@@ -67,7 +88,9 @@ fun DetailAppView(
     DisposableEffect(Unit) {
         val handle = installPlatformKeyDispatcher { event ->
             when {
-                event.char == 'c' && !event.isCtrlDown && !event.isMetaDown -> {
+                event.char?.equals('c', ignoreCase = true) == true
+                        && event.isShiftDown
+                        && (event.isMetaDown || event.isCtrlDown) -> {
                     viewModel.requestOpenCategory(); true
                 }
                 event.isEnter && (event.isMetaDown || event.isCtrlDown) -> {
@@ -82,6 +105,8 @@ fun DetailAppView(
     DetailAppViewContent(
         uiState = uiState,
         openCategoryTrigger = openCategoryTrigger,
+        isDraggingScreenshots = isDraggingScreenshots,
+        dropScreenshotsTarget = dropScreenshotsTarget,
         onPackageNameChange = viewModel::setPackageName,
         onTitleChange = viewModel::setTitle,
         onCategoryChange = viewModel::setCategorySlug,
@@ -96,16 +121,24 @@ fun DetailAppView(
         onDeleteVersion = viewModel::deleteVersion,
         onBack = { onClick(); viewModel.clear() },
         onUploadIcon = viewModel::uploadIcon,
+        onAddScreenshots = viewModel::addScreenshots,
+        onRequestDeleteScreenshot = viewModel::requestDeleteScreenshot,
+        onCancelDeleteScreenshot = viewModel::cancelDeleteScreenshot,
+        onConfirmDeleteScreenshot = viewModel::confirmDeleteScreenshot,
+        onMoveScreenshot = viewModel::moveScreenshot,
         onRequestUnregister = viewModel::requestUnregister,
         onCancelUnregister = viewModel::cancelUnregister,
         onUnregisterApp = { viewModel.unregisterApp { onClick(); viewModel.clear() } },
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun DetailAppViewContent(
     uiState: DetailAppUiState,
     openCategoryTrigger: Int = 0,
+    isDraggingScreenshots: Boolean = false,
+    dropScreenshotsTarget: DragAndDropTarget? = null,
     onPackageNameChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onCategoryChange: (String?) -> Unit,
@@ -120,6 +153,11 @@ private fun DetailAppViewContent(
     onDeleteVersion: (String) -> Unit,
     onBack: () -> Unit,
     onUploadIcon: (PlatformFile) -> Unit = {},
+    onAddScreenshots: (List<PlatformFile>) -> Unit = {},
+    onRequestDeleteScreenshot: (String) -> Unit = {},
+    onCancelDeleteScreenshot: () -> Unit = {},
+    onConfirmDeleteScreenshot: () -> Unit = {},
+    onMoveScreenshot: (String, Int) -> Unit = { _, _ -> },
     onRequestUnregister: () -> Unit = {},
     onCancelUnregister: () -> Unit = {},
     onUnregisterApp: () -> Unit = {},
@@ -131,6 +169,7 @@ private fun DetailAppViewContent(
     ) {
         val isCompact = maxWidth < 600.dp
         val pickIcon = rememberPlatformImagePicker(onImagePicked = onUploadIcon)
+        val pickScreenshots = rememberPlatformImagesPicker(onImagesPicked = onAddScreenshots)
 
         Column(
             modifier = Modifier.fillMaxSize().safeDrawingPadding(),
@@ -339,6 +378,59 @@ private fun DetailAppViewContent(
                         VersionCard(version = version, onDelete = { onDeleteVersion(version.id) })
                     }
                 }
+
+                if (dropScreenshotsTarget != null) {
+                    NeoCard(
+                        isDragging = isDraggingScreenshots,
+                        dropTarget = dropScreenshotsTarget
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            ScreenshotsSection(
+                                screenshots = uiState.screenshots,
+                                isUploading = uiState.isUploadingScreenshots,
+                                onAdd = { pickScreenshots() },
+                                onMove = onMoveScreenshot,
+                                onRequestDelete = onRequestDeleteScreenshot,
+                            )
+                        }
+                    }
+                } else {
+                    // Fallback just in case the target fails to initialize
+                    ScreenshotsSection(
+                        screenshots = uiState.screenshots,
+                        isUploading = uiState.isUploadingScreenshots,
+                        onAdd = { pickScreenshots() },
+                        onMove = onMoveScreenshot,
+                        onRequestDelete = onRequestDeleteScreenshot,
+                    )
+                }
+
+                if (uiState.screenshotToDelete != null) {
+                    NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(
+                                text = "Delete this screenshot?",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ButtonBasic("Cancel", onCancelDeleteScreenshot)
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(NegativePrimary.copy(alpha = 0.2f))
+                                        .clickable { onConfirmDeleteScreenshot() }
+                                        .padding(horizontal = 14.dp, vertical = 7.dp)
+                                ) {
+                                    Text("Delete", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -453,6 +545,143 @@ private fun VersionCard(version: AppVersionResponse, onDelete: () -> Unit) {
     }
 }
 
+@Composable
+private fun ScreenshotsSection(
+    screenshots: List<String>,
+    isUploading: Boolean,
+    onAdd: () -> Unit,
+    onMove: (String, Int) -> Unit,
+    onRequestDelete: (String) -> Unit,
+) {
+    Text(
+        text = "Screenshots (${screenshots.size})",
+        style = MaterialTheme.typography.titleMedium,
+        color = DarkPrimary,
+        fontWeight = FontWeight.Bold,
+    )
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (isUploading) DarkPrimaryTransparent40 else DarkPrimaryTransparent40)
+            .clickable(enabled = !isUploading) { onAdd() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = if (isUploading) "Uploading..." else "Add Screenshots",
+            color = DarkPrimary,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+
+    if (screenshots.isEmpty()) {
+        Text(
+            text = "No screenshots yet.",
+            color = TransparentText40,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        return
+    }
+
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        screenshots.forEachIndexed { index, url ->
+            ScreenshotThumbnail(
+                url = url,
+                canMoveLeft = index > 0,
+                canMoveRight = index < screenshots.lastIndex,
+                onMoveLeft = { onMove(url, -1) },
+                onMoveRight = { onMove(url, 1) },
+                onDelete = { onRequestDelete(url) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScreenshotThumbnail(
+    url: String,
+    canMoveLeft: Boolean,
+    canMoveRight: Boolean,
+    onMoveLeft: () -> Unit,
+    onMoveRight: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(180.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(DarkPrimaryCard)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        val imageUrl = if (url.startsWith("http")) url else "$BASE_URL_BUCKET_PUBLIC$url"
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            SubcomposeAsyncImage(
+                model = imageUrl,
+                contentDescription = "Screenshot",
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                },
+                error = {
+                    Text("Err", color = Color.Red, style = MaterialTheme.typography.labelSmall)
+                },
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                ArrowButton(enabled = canMoveLeft, label = "\u2190", onClick = onMoveLeft)
+                ArrowButton(enabled = canMoveRight, label = "\u2192", onClick = onMoveRight)
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(NegativePrimary.copy(alpha = 0.2f))
+                    .clickable { onDelete() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("\u00d7", color = NegativePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArrowButton(enabled: Boolean, label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (enabled) DarkPrimaryTransparent40 else DarkPrimaryTransparent40.copy(alpha = 0.3f))
+            .clickable(enabled = enabled) { onClick() }
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(
+            label,
+            color = if (enabled) DarkPrimary else TransparentText40.copy(alpha = 0.5f),
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
 @Preview
 @Composable
 private fun DetailAppViewPreview() {
@@ -471,6 +700,10 @@ private fun DetailAppViewPreview() {
                 AppVersionResponse("v1", "1", "1.0", 1, "/file.apk", "Initial release.", 3, 21, 1000L),
                 AppVersionResponse("v2", "1", "1.1", 2, "/file.apk", "Bug fixes.", 7, 21, 2000L),
             ),
+            screenshots = listOf(
+                "/buckets/neostore/id.neotica.neomart/screenshots/1.jpg",
+                "/buckets/neostore/id.neotica.neomart/screenshots/2.jpg",
+            ),
             statusMessage = "",
         ),
         onPackageNameChange = {},
@@ -487,6 +720,11 @@ private fun DetailAppViewPreview() {
         onDeleteVersion = {},
         onBack = {},
         onUploadIcon = {},
+        onAddScreenshots = {},
+        onRequestDeleteScreenshot = {},
+        onCancelDeleteScreenshot = {},
+        onConfirmDeleteScreenshot = {},
+        onMoveScreenshot = { _, _ -> },
         onRequestUnregister = {},
         onCancelUnregister = {},
         onUnregisterApp = {},

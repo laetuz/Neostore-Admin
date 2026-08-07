@@ -42,6 +42,19 @@ actual fun rememberPlatformImagePicker(onImagePicked: (PlatformFile) -> Unit): (
 }
 
 @Composable
+actual fun rememberPlatformImagesPicker(onImagesPicked: (List<PlatformFile>) -> Unit): () -> Unit {
+    val picked by rememberUpdatedState(onImagesPicked)
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (uris.isNotEmpty()) picked(uris.map { platformFileFromUri(it) })
+    }
+    return remember {
+        { launcher.launch(arrayOf("image/*")) }
+    }
+}
+
+@Composable
 actual fun rememberPlatformFilePicker(onFilesPicked: (List<PlatformFile>) -> Unit): () -> Unit {
     val picked by rememberUpdatedState(onFilesPicked)
     val launcher = rememberLauncherForActivityResult(

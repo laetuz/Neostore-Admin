@@ -14,6 +14,7 @@ actual class PlatformKeyEvent internal constructor(
     actual val isEnter: Boolean,
     actual val isCtrlDown: Boolean,
     actual val isMetaDown: Boolean,
+    actual val isShiftDown: Boolean,
 ) {
     internal companion object {
         fun fromAwt(event: KeyEvent): PlatformKeyEvent = PlatformKeyEvent(
@@ -24,6 +25,7 @@ actual class PlatformKeyEvent internal constructor(
             isEnter = event.keyCode == KeyEvent.VK_ENTER,
             isCtrlDown = event.isControlDown,
             isMetaDown = event.isMetaDown,
+            isShiftDown = event.isShiftDown,
         )
     }
 }

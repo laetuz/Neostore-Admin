@@ -8,6 +8,7 @@ actual class PlatformKeyEvent internal constructor(
     actual val isEnter: Boolean,
     actual val isCtrlDown: Boolean,
     actual val isMetaDown: Boolean,
+    actual val isShiftDown: Boolean,
 )
 
 actual fun installPlatformKeyDispatcher(handler: (PlatformKeyEvent) -> Boolean): () -> Unit = { }

@@ -66,6 +66,23 @@ actual fun rememberPlatformImagePicker(onImagePicked: (PlatformFile) -> Unit): (
 }
 
 @Composable
+actual fun rememberPlatformImagesPicker(onImagesPicked: (List<PlatformFile>) -> Unit): () -> Unit {
+    val picked by rememberUpdatedState(onImagesPicked)
+    return remember(picked) {
+        {
+            val chooser = JFileChooser()
+            chooser.dialogTitle = "Select Screenshots"
+            chooser.isMultiSelectionEnabled = true
+            chooser.fileFilter = FileNameExtensionFilter("Image files", "png", "jpg", "jpeg")
+            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                val files = chooser.selectedFiles.toList().ifEmpty { listOfNotNull(chooser.selectedFile) }
+                picked(files.map { platformFileFromJavaFile(it) })
+            }
+        }
+    }
+}
+
+@Composable
 actual fun rememberPlatformFilePicker(onFilesPicked: (List<PlatformFile>) -> Unit): () -> Unit {
     val picked by rememberUpdatedState(onFilesPicked)
     return remember(picked) {

@@ -8,6 +8,7 @@ expect class PlatformKeyEvent {
     val isEnter: Boolean
     val isCtrlDown: Boolean
     val isMetaDown: Boolean
+    val isShiftDown: Boolean
 }
 
 expect fun installPlatformKeyDispatcher(handler: (PlatformKeyEvent) -> Boolean): () -> Unit
