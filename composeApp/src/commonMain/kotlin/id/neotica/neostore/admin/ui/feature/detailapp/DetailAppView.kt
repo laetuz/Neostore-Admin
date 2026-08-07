@@ -87,6 +87,7 @@ fun DetailAppView(
         onCategoryChange = viewModel::setCategorySlug,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
+        onDeveloperChange = viewModel::setDeveloper,
         onGithubRepoChange = viewModel::setGithubRepo,
         onCheckApp = viewModel::getAppDetail,
         onClear = viewModel::clear,
@@ -110,6 +111,7 @@ private fun DetailAppViewContent(
     onCategoryChange: (String?) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
+    onDeveloperChange: (String) -> Unit,
     onGithubRepoChange: (String) -> Unit,
     onCheckApp: () -> Unit,
     onClear: () -> Unit,
@@ -246,6 +248,15 @@ private fun DetailAppViewContent(
                                 )
                             }
                         }
+
+                        TextField(
+                            value = uiState.developer,
+                            onValueChange = onDeveloperChange,
+                            label = { Text("Developer") },
+                            placeholder = { Text("laetuz", color = PurpleGrey40) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
 
                         TextField(
                             value = uiState.githubRepo,
@@ -467,6 +478,7 @@ private fun DetailAppViewPreview() {
         onCategoryChange = {},
         onDescriptionChange = {},
         onIconUrlChange = {},
+        onDeveloperChange = {},
         onGithubRepoChange = {},
         onCheckApp = {},
         onClear = {},

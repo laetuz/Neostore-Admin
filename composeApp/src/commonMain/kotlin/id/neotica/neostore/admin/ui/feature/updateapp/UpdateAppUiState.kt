@@ -10,6 +10,7 @@ data class UpdateAppUiState(
     val categories: List<Category> = emptyList(),
     val categorySlug: String? = null,
     val iconUrl: String = "",
+    val developer: String = "",
     val githubRepo: String = "",
     val statusMessage: String = ""
 )

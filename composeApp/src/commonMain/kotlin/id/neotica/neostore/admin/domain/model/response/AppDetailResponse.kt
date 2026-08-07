@@ -13,6 +13,7 @@ data class AppDetailResponse(
     val category: String,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("icon_url") val iconUrl: String? = null,
+    val developer: String? = null,
     @SerialName("github_repo") val githubRepo: String? = null,
     @SerialName("last_github_tag") val lastGithubTag: String? = null,
     val versions: List<AppVersionResponse> = emptyList()

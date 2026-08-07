@@ -10,6 +10,7 @@ data class UpdateAppRequest(
     val category: String = "",
     @SerialName("icon_url")
     val iconUrl: String = "",
+    val developer: String? = null,
     @SerialName("github_repo")
     val githubRepo: String? = null
 )

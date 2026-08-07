@@ -40,6 +40,7 @@ class DetailAppViewModel(
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
     fun setCategorySlug(slug: String?) = _uiState.update { it.copy(categorySlug = slug) }
     fun setIconUrl(iconUrl: String) = _uiState.update { it.copy(iconUrl = iconUrl) }
+    fun setDeveloper(developer: String) = _uiState.update { it.copy(developer = developer) }
     fun setGithubRepo(githubRepo: String) = _uiState.update { it.copy(githubRepo = githubRepo) }
 
     fun clear() {
@@ -61,6 +62,7 @@ class DetailAppViewModel(
                 description = data.description,
                 categorySlug = matching?.slug ?: data.category,
                 iconUrl = data.iconUrl ?: "",
+                developer = data.developer ?: "",
                 githubRepo = data.githubRepo ?: "",
                 lastGithubTag = data.lastGithubTag ?: "",
                 versions = data.versions
@@ -87,6 +89,7 @@ class DetailAppViewModel(
                 description = currentState.description,
                 category = currentState.categorySlug ?: "",
                 iconUrl = currentState.iconUrl,
+                developer = currentState.developer.ifBlank { null },
                 githubRepo = currentState.githubRepo.ifBlank { null }
             )
 
@@ -117,6 +120,7 @@ class DetailAppViewModel(
                     description = _uiState.value.description,
                     category = _uiState.value.categorySlug ?: "",
                     iconUrl = iconUrl,
+                    developer = _uiState.value.developer.ifBlank { null },
                     githubRepo = _uiState.value.githubRepo.ifBlank { null }
                 )
                 repo.updateApp(packageName, updateRequest).onSuccess {

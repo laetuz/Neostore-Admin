@@ -43,6 +43,7 @@ fun UpdateAppView(
         onCategoryChange = viewModel::setCategorySlug,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
+        onDeveloperChange = viewModel::setDeveloper,
         onGithubRepoChange = viewModel::setGithubRepo,
         onCheckApp = viewModel::getAppDetail,
         onClear = viewModel::clear,
@@ -58,6 +59,7 @@ private fun UpdateAppViewContent(
     onCategoryChange: (String?) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
+    onDeveloperChange: (String) -> Unit,
     onGithubRepoChange: (String) -> Unit,
     onCheckApp: () -> Unit,
     onClear: () -> Unit,
@@ -138,6 +140,15 @@ private fun UpdateAppViewContent(
                     onValueChange = onIconUrlChange,
                     label = { Text("Icon URL") },
                     placeholder = { Text("https://storage.example.com/.../icon.jpg", color = PurpleGrey40) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                TextField(
+                    value = uiState.developer,
+                    onValueChange = onDeveloperChange,
+                    label = { Text("Developer") },
+                    placeholder = { Text("laetuz", color = PurpleGrey40) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -241,6 +252,7 @@ private fun UpdateAppViewPreview() {
         onCategoryChange = {},
         onDescriptionChange = {},
         onIconUrlChange = {},
+        onDeveloperChange = {},
         onGithubRepoChange = {},
         onCheckApp = {},
         onClear = {},

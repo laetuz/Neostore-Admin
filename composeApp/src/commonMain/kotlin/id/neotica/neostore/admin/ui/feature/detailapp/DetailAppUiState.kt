@@ -11,6 +11,7 @@ data class DetailAppUiState(
     val categories: List<Category> = emptyList(),
     val categorySlug: String? = null,
     val iconUrl: String = "",
+    val developer: String = "",
     val githubRepo: String = "",
     val lastGithubTag: String = "",
     val versions: List<AppVersionResponse> = emptyList(),
