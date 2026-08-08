@@ -278,9 +278,9 @@ private fun FeedViewPreview() {
     FeedViewContent(
         uiState = FeedUiState(
             apps = listOf(
-                AppFeedItemResponse("id.neotica.neomart", "Neomart", "A marketplace for legacy Android devices.", "APPLICATION", null),
-                AppFeedItemResponse("com.example.game", "Retro Game", "Classic game for old phones.", "GAME", null),
-                AppFeedItemResponse("org.tool.utils", "Utility Pack", "Useful tools for daily tasks.", "UTILITIES", "/buckets/neostore/icon.png"),
+                AppFeedItemResponse(packageName = "id.neotica.neomart", title = "Neomart", description = "A marketplace for legacy Android devices.", category = "APPLICATION"),
+                AppFeedItemResponse(packageName = "com.example.game", title = "Retro Game", description = "Classic game for old phones.", category = "GAME"),
+                AppFeedItemResponse(packageName = "org.tool.utils", title = "Utility Pack", description = "Useful tools for daily tasks.", category = "UTILITIES", iconUrl = "/buckets/neostore/icon.png"),
             ),
             currentPage = 1,
             totalPages = 3,

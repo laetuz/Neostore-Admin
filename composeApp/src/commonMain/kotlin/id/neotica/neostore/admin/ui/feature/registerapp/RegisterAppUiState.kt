@@ -10,6 +10,7 @@ data class RegisterAppUiState(
     val description: String = "",
     val categories: List<Category> = emptyList(),
     val categorySlug: String? = null,
+    val secondaryCategorySlugs: List<String> = emptyList(),
     val iconUrl: String = "",
     val statusMessage: String = "",
     val iconByteArray: ByteArray? = null,

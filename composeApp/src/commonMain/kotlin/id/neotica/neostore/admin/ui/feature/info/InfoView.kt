@@ -64,7 +64,7 @@ private fun KeyboardShortcutsCard() {
             ShortcutRow("⌘/Ctrl + 5", "Info tab")
             ShortcutRow("⌘/Ctrl + 0", "Clipboard (temporary)")
             ShortcutRow("Escape", "Back to Feed (from Detail)")
-            ShortcutRow("C", "Open category dropdown (in Detail)")
+            ShortcutRow("⌘ + Shift + C", "Open category dropdown (in Detail)")
             ShortcutRow("⌘/Ctrl + Enter", "Update app (in Detail)")
             Spacer(modifier = Modifier.height(4.dp))
             SectionTitle("Category dropdown (when open)")
@@ -86,8 +86,8 @@ private fun BuildInfoCard() {
             SectionTitle("Build")
             InfoRow("Version", BuildConfig.APP_VERSION)
             InfoRow("Package", "Neostore Admin")
-            InfoRow("Kotlin", "2.3.0")
-            InfoRow("Compose", "1.10.0")
+            InfoRow("Kotlin", "2.4.10")
+            InfoRow("Compose", "1.11.1")
             InfoRow("JDK", "21+")
         }
     }

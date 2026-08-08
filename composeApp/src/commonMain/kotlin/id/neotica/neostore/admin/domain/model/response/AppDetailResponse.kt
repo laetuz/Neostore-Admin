@@ -16,6 +16,7 @@ data class AppDetailResponse(
     val developer: String? = null,
     @SerialName("github_repo") val githubRepo: String? = null,
     @SerialName("last_github_tag") val lastGithubTag: String? = null,
+    val categories: List<String> = emptyList(),
     val versions: List<AppVersionResponse> = emptyList(),
     val screenshots: List<String> = emptyList()
 )

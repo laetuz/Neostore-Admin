@@ -9,5 +9,6 @@ data class RegisterAppRequest(
     val packageName: String,
     val title: String,
     val description: String,
-    val category: String = ""
+    val category: String = "",
+    val categories: List<String>? = null
 )

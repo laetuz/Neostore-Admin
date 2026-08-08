@@ -24,14 +24,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draganddrop.DragAndDropEvent
-import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import id.neotica.neostore.admin.platform.PlatformFile
 import id.neotica.neostore.admin.platform.rememberPlatformFileDropTarget
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategoryMultiSelect
 import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCard
@@ -118,6 +116,14 @@ fun RegisterAppView(
             categories = uiState.categories,
             selectedSlug = uiState.categorySlug,
             onSelect = { viewModel.setCategorySlug(it) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        CategoryMultiSelect(
+            categories = uiState.categories,
+            selectedSlugs = uiState.secondaryCategorySlugs,
+            onAdd = viewModel::addSecondaryCategory,
+            onRemove = viewModel::removeSecondaryCategory,
+            excludeSlug = uiState.categorySlug,
             modifier = Modifier.fillMaxWidth(),
         )
         TextField(

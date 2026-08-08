@@ -1,7 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.util.Properties
 
-val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "2.0.0").removePrefix("v")
+val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "2.2.0").removePrefix("v")
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -38,9 +38,9 @@ kotlin {
             implementation(libs.neotoast)
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.koin)
-            implementation("net.dongliu:apk-parser:2.6.10")
-            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
-            implementation("io.coil-kt.coil3:coil-network-ktor3:3.0.4")
+            implementation(libs.apk.parser)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -59,12 +59,12 @@ kotlin {
 
 android {
     namespace = "id.neotica.neostore.admin"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "id.neotica.neostore.admin"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = appVersion
     }

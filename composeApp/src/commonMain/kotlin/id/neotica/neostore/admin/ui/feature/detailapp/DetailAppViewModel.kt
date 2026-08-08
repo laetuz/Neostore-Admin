@@ -40,6 +40,13 @@ class DetailAppViewModel(
     fun setTitle(title: String) = _uiState.update { it.copy(title = title) }
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
     fun setCategorySlug(slug: String?) = _uiState.update { it.copy(categorySlug = slug) }
+    fun addSecondaryCategory(slug: String?) {
+        if (slug == null) return
+        _uiState.update { it.copy(secondaryCategorySlugs = (it.secondaryCategorySlugs + slug).distinct()) }
+    }
+    fun removeSecondaryCategory(slug: String) = _uiState.update {
+        it.copy(secondaryCategorySlugs = it.secondaryCategorySlugs - slug)
+    }
     fun setIconUrl(iconUrl: String) = _uiState.update { it.copy(iconUrl = iconUrl) }
     fun setDeveloper(developer: String) = _uiState.update { it.copy(developer = developer) }
     fun setGithubRepo(githubRepo: String) = _uiState.update { it.copy(githubRepo = githubRepo) }
@@ -62,6 +69,7 @@ class DetailAppViewModel(
                 title = data.title,
                 description = data.description,
                 categorySlug = matching?.slug ?: data.category,
+                secondaryCategorySlugs = data.categories,
                 iconUrl = data.iconUrl ?: "",
                 developer = data.developer ?: "",
                 githubRepo = data.githubRepo ?: "",
@@ -90,6 +98,7 @@ class DetailAppViewModel(
                 title = currentState.title,
                 description = currentState.description,
                 category = currentState.categorySlug ?: "",
+                categories = currentState.secondaryCategorySlugs,
                 iconUrl = currentState.iconUrl,
                 developer = currentState.developer.ifBlank { null },
                 githubRepo = currentState.githubRepo.ifBlank { null }
@@ -121,6 +130,7 @@ class DetailAppViewModel(
                     title = _uiState.value.title,
                     description = _uiState.value.description,
                     category = _uiState.value.categorySlug ?: "",
+                    categories = _uiState.value.secondaryCategorySlugs,
                     iconUrl = iconUrl,
                     developer = _uiState.value.developer.ifBlank { null },
                     githubRepo = _uiState.value.githubRepo.ifBlank { null }

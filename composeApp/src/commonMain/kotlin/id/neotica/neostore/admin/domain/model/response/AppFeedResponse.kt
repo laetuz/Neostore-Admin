@@ -10,6 +10,7 @@ data class AppFeedItemResponse(
     val title: String,
     val description: String? = null,
     val category: String,
+    val categories: List<String> = emptyList(),
     @SerialName("icon_url")
     val iconUrl: String? = null
 )

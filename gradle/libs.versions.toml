@@ -1,22 +1,27 @@
 [versions]
-agp = "8.9.1"
+agp = "8.9.3"
 androidx-activity = "1.9.3"
-androidx-lifecycle = "2.9.6"
-androidx-navigation3 = "1.0.0-alpha05"
-composeHotReload = "1.0.0"
-composeMultiplatform = "1.11.0"
+androidx-lifecycle = "2.11.0"
+androidx-navigation3 = "1.1.1"
+apkParser = "2.6.10"
+coilNetworkKtor3 = "3.5.0"
+composeHotReload = "1.2.0"
+composeMultiplatform = "1.11.1"
 junit = "4.13.2"
-kotlin = "2.3.21"
-kotlinx-coroutines = "1.10.2"
+kotlin = "2.4.10"
+kotlinx-coroutines = "1.11.0"
 material3 = "1.11.0-alpha05"
 neotoast = "0.1.3"
-ktor = "3.1.2"
-logback = "1.5.3"
+ktor = "3.5.2"
+logback = "1.6.1"
 
 #koin
 koinMultiplatform="4.0.1"
 
 [libraries]
+apk-parser = { module = "net.dongliu:apk-parser", version.ref = "apkParser" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilNetworkKtor3" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilNetworkKtor3" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }

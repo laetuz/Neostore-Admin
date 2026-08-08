@@ -10,6 +10,7 @@ data class DetailAppUiState(
     val description: String = "",
     val categories: List<Category> = emptyList(),
     val categorySlug: String? = null,
+    val secondaryCategorySlugs: List<String> = emptyList(),
     val iconUrl: String = "",
     val developer: String = "",
     val githubRepo: String = "",

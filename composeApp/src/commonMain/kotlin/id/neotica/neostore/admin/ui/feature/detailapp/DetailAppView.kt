@@ -48,6 +48,7 @@ import id.neotica.neostore.admin.platform.installPlatformKeyDispatcher
 import id.neotica.neostore.admin.platform.rememberPlatformImagePicker
 import id.neotica.neostore.admin.platform.rememberPlatformImagesPicker
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategoryMultiSelect
 import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
@@ -110,6 +111,8 @@ fun DetailAppView(
         onPackageNameChange = viewModel::setPackageName,
         onTitleChange = viewModel::setTitle,
         onCategoryChange = viewModel::setCategorySlug,
+        onAddSecondaryCategory = viewModel::addSecondaryCategory,
+        onRemoveSecondaryCategory = viewModel::removeSecondaryCategory,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
         onDeveloperChange = viewModel::setDeveloper,
@@ -142,6 +145,8 @@ private fun DetailAppViewContent(
     onPackageNameChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onCategoryChange: (String?) -> Unit,
+    onAddSecondaryCategory: (String?) -> Unit = {},
+    onRemoveSecondaryCategory: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
     onDeveloperChange: (String) -> Unit,
@@ -241,6 +246,15 @@ private fun DetailAppViewContent(
                             selectedSlug = uiState.categorySlug,
                             onSelect = onCategoryChange,
                             openTrigger = openCategoryTrigger,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+
+                        CategoryMultiSelect(
+                            categories = uiState.categories,
+                            selectedSlugs = uiState.secondaryCategorySlugs,
+                            onAdd = onAddSecondaryCategory,
+                            onRemove = onRemoveSecondaryCategory,
+                            excludeSlug = uiState.categorySlug,
                             modifier = Modifier.fillMaxWidth(),
                         )
 

@@ -35,6 +35,13 @@ class RegisterAppViewModel(
     fun setTitle(title: String) = _uiState.update { it.copy(title = title) }
     fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
     fun setCategorySlug(slug: String?) = _uiState.update { it.copy(categorySlug = slug) }
+    fun addSecondaryCategory(slug: String?) {
+        if (slug == null) return
+        _uiState.update { it.copy(secondaryCategorySlugs = (it.secondaryCategorySlugs + slug).distinct()) }
+    }
+    fun removeSecondaryCategory(slug: String) = _uiState.update {
+        it.copy(secondaryCategorySlugs = it.secondaryCategorySlugs - slug)
+    }
 
     fun clear() {
         _uiState.update { RegisterAppUiState() }
@@ -128,6 +135,7 @@ class RegisterAppViewModel(
                 title = currentState.title,
                 description = currentState.description,
                 category = currentState.categorySlug ?: "",
+                categories = currentState.secondaryCategorySlugs.takeIf { it.isNotEmpty() },
             )
 
             val registerResult = repo.registerApp(registerRequest)

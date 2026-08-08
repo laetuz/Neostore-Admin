@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import id.neotica.neostore.admin.domain.model.category.response.Category
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategoryMultiSelect
 import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
@@ -41,6 +42,8 @@ fun UpdateAppView(
         onPackageNameChange = viewModel::setPackageName,
         onTitleChange = viewModel::setTitle,
         onCategoryChange = viewModel::setCategorySlug,
+        onAddSecondaryCategory = viewModel::addSecondaryCategory,
+        onRemoveSecondaryCategory = viewModel::removeSecondaryCategory,
         onDescriptionChange = viewModel::setDescription,
         onIconUrlChange = viewModel::setIconUrl,
         onDeveloperChange = viewModel::setDeveloper,
@@ -57,6 +60,8 @@ private fun UpdateAppViewContent(
     onPackageNameChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onCategoryChange: (String?) -> Unit,
+    onAddSecondaryCategory: (String?) -> Unit = {},
+    onRemoveSecondaryCategory: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit,
     onIconUrlChange: (String) -> Unit,
     onDeveloperChange: (String) -> Unit,
@@ -122,6 +127,15 @@ private fun UpdateAppViewContent(
                     categories = uiState.categories,
                     selectedSlug = uiState.categorySlug,
                     onSelect = onCategoryChange,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                CategoryMultiSelect(
+                    categories = uiState.categories,
+                    selectedSlugs = uiState.secondaryCategorySlugs,
+                    onAdd = onAddSecondaryCategory,
+                    onRemove = onRemoveSecondaryCategory,
+                    excludeSlug = uiState.categorySlug,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
