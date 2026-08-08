@@ -1,7 +1,7 @@
 [versions]
 agp = "8.9.3"
 androidx-activity = "1.9.3"
-androidx-lifecycle = "2.11.0"
+androidx-lifecycle = "2.9.6"
 androidx-navigation3 = "1.1.1"
 apkParser = "2.6.10"
 coilNetworkKtor3 = "3.5.0"

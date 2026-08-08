@@ -59,12 +59,12 @@ kotlin {
 
 android {
     namespace = "id.neotica.neostore.admin"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "id.neotica.neostore.admin"
         minSdk = 30
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = appVersion
     }
