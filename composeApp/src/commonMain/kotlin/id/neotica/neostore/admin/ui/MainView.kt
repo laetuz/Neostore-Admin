@@ -25,11 +25,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import id.neotica.neostore.admin.domain.model.contributor.ContributorRole
 import id.neotica.neostore.admin.domain.model.response.AppFeedItemResponse
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.feature.analytics.AnalyticsView
 import id.neotica.neostore.admin.ui.feature.categories.CategoriesView
+import id.neotica.neostore.admin.ui.feature.contributions.ContributionsView
+import id.neotica.neostore.admin.ui.feature.contributors.ContributorsView
 import id.neotica.neostore.admin.ui.feature.feed.FeedView
 import id.neotica.neostore.admin.ui.feature.info.InfoView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
@@ -37,16 +40,21 @@ import id.neotica.neostore.admin.ui.navigation.AppNavigationBar
 import id.neotica.neostore.admin.ui.navigation.AppNavigationRail
 import id.neotica.neostore.admin.ui.navigation.MainScreenType
 import id.neotica.neostore.admin.ui.navigation.Screen
+import id.neotica.neostore.admin.ui.navigation.navItemsFor
 import id.neotica.neostore.admin.ui.navigation.toMainScreenType
 
 @Composable
 fun MainView(
     screen: Screen,
+    role: ContributorRole,
+    myUserId: String,
     onNavigateTab: (MainScreenType) -> Unit,
     onNavigateToDetail: (AppFeedItemResponse) -> Unit,
+    onNavigateToContribution: (String) -> Unit = {},
     onLogout: () -> Unit = {},
 ) {
     val screenType = screen.toMainScreenType() ?: MainScreenType.FEEDS
+    val items = navItemsFor(role)
 
     MaterialTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -62,6 +70,7 @@ fun MainView(
                             AppNavigationBar(
                                 currentScreen = screenType,
                                 onNavigate = onNavigateTab,
+                                items = items,
                             )
                         }
                     },
@@ -74,7 +83,10 @@ fun MainView(
                     ) {
                         MainContent(
                             screenType = screenType,
+                            role = role,
+                            myUserId = myUserId,
                             onNavigateToDetail = onNavigateToDetail,
+                            onNavigateToContribution = onNavigateToContribution,
                         )
                     }
                 }
@@ -93,6 +105,7 @@ fun MainView(
                         AppNavigationRail(
                             currentScreen = screenType,
                             onNavigate = onNavigateTab,
+                            items = items,
                         )
 
                         Column(
@@ -102,7 +115,10 @@ fun MainView(
                         ) {
                             MainContent(
                                 screenType = screenType,
+                                role = role,
+                                myUserId = myUserId,
                                 onNavigateToDetail = onNavigateToDetail,
+                                onNavigateToContribution = onNavigateToContribution,
                             )
                         }
                     }
@@ -121,7 +137,7 @@ private fun MainTopBar(onLogout: () -> Unit) {
         TopAppBar(
             title = {
                 Text(
-                    text = "Neostore Admin",
+                    text = "HoloMarket Console",
                     color = DarkPrimary
                 )
             },
@@ -159,14 +175,23 @@ private fun MainTopBar(onLogout: () -> Unit) {
 @Composable
 private fun MainContent(
     screenType: MainScreenType,
+    role: ContributorRole,
+    myUserId: String,
     onNavigateToDetail: (AppFeedItemResponse) -> Unit,
+    onNavigateToContribution: (String) -> Unit,
 ) {
     when (screenType) {
-        MainScreenType.UPLOADER -> UploadView()
+        MainScreenType.UPLOADER -> UploadView(role = role)
         MainScreenType.FEEDS -> FeedView(onNavigateToUpdater = onNavigateToDetail)
         MainScreenType.DETAIL -> Unit
         MainScreenType.ANALYTICS -> AnalyticsView()
         MainScreenType.CATEGORIES -> CategoriesView()
+        MainScreenType.CONTRIBUTIONS -> ContributionsView(
+            role = role,
+            myUserId = myUserId,
+            onNavigateToDetail = onNavigateToContribution,
+        )
+        MainScreenType.CONTRIBUTORS -> ContributorsView()
         MainScreenType.INFO -> InfoView()
     }
 }

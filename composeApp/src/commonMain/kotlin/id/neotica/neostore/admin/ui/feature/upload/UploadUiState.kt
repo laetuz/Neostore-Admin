@@ -1,5 +1,6 @@
 package id.neotica.neostore.admin.ui.feature.upload
 
+import id.neotica.neostore.admin.domain.model.category.response.Category
 import id.neotica.neostore.admin.platform.PlatformFile
 
 data class UploadUiState(
@@ -19,6 +20,12 @@ data class UploadUiState(
     val description: String = "",
     val category: String = "APPLICATION", // Defaulting to APPLICATION
     val iconByteArray: ByteArray? = null,
+
+    // Contributor submission
+    val developer: String = "",
+    val secondaryCategorySlugs: List<String> = emptyList(),
+    val screenshots: List<PlatformFile> = emptyList(),
+    val categories: List<Category> = emptyList(),
 
     val uploadQueue: List<QueuedFile> = emptyList(),
     val isBulkProcessing: Boolean = false,

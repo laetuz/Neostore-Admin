@@ -7,10 +7,12 @@ import id.neotica.neostore.admin.domain.local.TokenStorage
 import id.neotica.neostore.admin.data.remote.AnalyticsRepositoryImpl
 import id.neotica.neostore.admin.data.remote.CategoriesRepositoryImpl
 import id.neotica.neostore.admin.data.remote.CollectionsRepositoryImpl
+import id.neotica.neostore.admin.data.remote.ContributorsRepositoryImpl
 import id.neotica.neostore.admin.domain.remote.AnalyticsRepository
 import id.neotica.neostore.admin.domain.remote.AuthRepository
 import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.CollectionsRepository
+import id.neotica.neostore.admin.domain.remote.ContributorsRepository
 import id.neotica.neostore.admin.ui.feature.upload.UploadViewModel
 import id.neotica.neostore.admin.ui.feature.auth.LoginViewModel
 import id.neotica.neostore.admin.ui.feature.detailapp.DetailAppViewModel
@@ -20,6 +22,10 @@ import id.neotica.neostore.admin.ui.feature.updateapp.UpdateAppViewModel
 import id.neotica.neostore.admin.ui.feature.analytics.AnalyticsViewModel
 import id.neotica.neostore.admin.ui.feature.categories.CategoriesViewModel
 import id.neotica.neostore.admin.ui.feature.collections.CollectionsViewModel
+import id.neotica.neostore.admin.ui.feature.contributions.ContributionDetailViewModel
+import id.neotica.neostore.admin.ui.feature.contributions.ContributionsViewModel
+import id.neotica.neostore.admin.ui.feature.contributors.ContributorsViewModel
+import id.neotica.neostore.admin.ui.feature.session.SessionStore
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -44,6 +50,7 @@ val dataModules = module {
     singleOf(::AnalyticsRepositoryImpl).bind(AnalyticsRepository::class)
     singleOf(::CategoriesRepositoryImpl).bind(CategoriesRepository::class)
     singleOf(::CollectionsRepositoryImpl).bind(CollectionsRepository::class)
+    singleOf(::ContributorsRepositoryImpl).bind(ContributorsRepository::class)
     single<AuthRepository> {
         AuthRepositoryImpl(
             get(),
@@ -61,6 +68,10 @@ val dataModules = module {
     viewModelOf(::AnalyticsViewModel)
     viewModelOf(::CategoriesViewModel)
     viewModelOf(::CollectionsViewModel)
+    singleOf(::SessionStore)
+    viewModelOf(::ContributionsViewModel)
+    viewModelOf(::ContributionDetailViewModel)
+    viewModelOf(::ContributorsViewModel)
 }
 
 val networkModule = module {

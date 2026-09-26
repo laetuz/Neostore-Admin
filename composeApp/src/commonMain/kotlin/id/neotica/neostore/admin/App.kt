@@ -2,11 +2,17 @@ package id.neotica.neostore.admin
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import id.neotica.neostore.admin.domain.local.TokenStorage
+import id.neotica.neostore.admin.domain.model.contributor.ContributorRole
 import id.neotica.neostore.admin.platform.copyToClipboard
 import id.neotica.neostore.admin.platform.installPlatformKeyDispatcher
 import id.neotica.neostore.admin.platform.performPlatformPageDownScroll
@@ -16,31 +22,77 @@ import id.neotica.neostore.admin.ui.feature.clipboard.ClipboardView
 import id.neotica.neostore.admin.ui.feature.clipboard.clipboardCopiedIndex
 import id.neotica.neostore.admin.ui.feature.clipboard.clipboardItems
 import id.neotica.neostore.admin.ui.feature.clipboard.clipboardPageDownCount
+import id.neotica.neostore.admin.ui.feature.contributions.ContributionDetailView
 import id.neotica.neostore.admin.ui.feature.detailapp.DetailAppView
+import id.neotica.neostore.admin.ui.feature.session.NoAccessView
+import id.neotica.neostore.admin.ui.feature.session.SessionLoadingView
+import id.neotica.neostore.admin.ui.feature.session.SessionStore
 import id.neotica.neostore.admin.ui.navigation.Screen
+import id.neotica.neostore.admin.ui.navigation.navItemsFor
 import id.neotica.neostore.admin.ui.navigation.toScreen
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.auth.authProvider
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import org.koin.compose.koinInject
 
 @Composable
-fun App(tokenStorage: TokenStorage = koinInject()) {
-    val startScreen: Screen = if (tokenStorage.getToken() != null) Screen.Feed else Screen.Auth
-    val backStack = remember { NavBackStack<Screen>(startScreen) }
+fun App(
+    tokenStorage: TokenStorage = koinInject(),
+    session: SessionStore = koinInject(),
+    httpClient: HttpClient = koinInject(),
+) {
+    var hasToken by remember { mutableStateOf(tokenStorage.getToken() != null) }
+    val me by session.me.collectAsState()
+    val isResolving by session.isResolving.collectAsState()
 
-    val tabTargets = mapOf(
-        1 to Screen.Upload,
-        2 to Screen.Feed,
-        3 to Screen.Categories,
-        4 to Screen.Analytics,
-        5 to Screen.Info,
-    )
+    val logout: () -> Unit = {
+        tokenStorage.clearToken()
+        session.clear()
+        httpClient.authProvider<BearerAuthProvider>()?.clearToken()
+        hasToken = false
+    }
 
-    DisposableEffect(Unit) {
+    LaunchedEffect(hasToken) {
+        if (hasToken && me == null) session.refresh()
+    }
+
+    if (!hasToken) {
+        AuthView(
+            onLoginSuccess = {
+                hasToken = true
+                session.clear()
+                session.refresh()
+            }
+        )
+        return
+    }
+
+    val currentMe = me
+    if (currentMe == null || isResolving) {
+        SessionLoadingView()
+        return
+    }
+
+    if (currentMe.role == ContributorRole.NONE) {
+        NoAccessView(onLogout = logout)
+        return
+    }
+
+    val role = currentMe.role
+    val myUserId = currentMe.userId
+    val tabScreens = remember(role) { navItemsFor(role).map { it.type.toScreen() } }
+    val startScreen = remember(role) {
+        if (role == ContributorRole.OWNER) Screen.Feed else Screen.Upload
+    }
+    val backStack = remember(role) { NavBackStack<Screen>(startScreen) }
+
+    DisposableEffect(role) {
         val handle = installPlatformKeyDispatcher { event ->
             val digit = event.char?.digitToIntOrNull() ?: -1
             when {
-                digit in 1..5 && (event.isMetaDown || event.isCtrlDown) -> {
+                digit in 1..tabScreens.size && (event.isMetaDown || event.isCtrlDown) -> {
                     backStack.clear()
-                    backStack.add(tabTargets[digit]!!)
+                    backStack.add(tabScreens[digit - 1])
                     true
                 }
 
@@ -55,7 +107,7 @@ fun App(tokenStorage: TokenStorage = koinInject()) {
 
                 event.isEscape -> {
                     when (backStack.lastOrNull()) {
-                        is Screen.Clipboard, is Screen.Detail -> {
+                        is Screen.Clipboard, is Screen.Detail, is Screen.ContributionDetail -> {
                             backStack.removeLastOrNull()
                             true
                         }
@@ -96,8 +148,8 @@ fun App(tokenStorage: TokenStorage = koinInject()) {
                 when (key) {
                     Screen.Auth -> AuthView(
                         onLoginSuccess = {
-                            backStack.clear()
-                            backStack.add(Screen.Feed)
+                            session.clear()
+                            session.refresh()
                         }
                     )
                     Screen.Clipboard -> ClipboardView(
@@ -107,8 +159,15 @@ fun App(tokenStorage: TokenStorage = koinInject()) {
                         packageName = key.packageName,
                         onClick = { backStack.removeLastOrNull() },
                     )
+                    is Screen.ContributionDetail -> ContributionDetailView(
+                        id = key.id,
+                        role = role,
+                        onBack = { backStack.removeLastOrNull() },
+                    )
                     else -> MainView(
                         screen = key,
+                        role = role,
+                        myUserId = myUserId,
                         onNavigateTab = { type ->
                             backStack.clear()
                             backStack.add(type.toScreen())
@@ -116,11 +175,10 @@ fun App(tokenStorage: TokenStorage = koinInject()) {
                         onNavigateToDetail = { app ->
                             backStack.add(Screen.Detail(app.packageName))
                         },
-                        onLogout = {
-                            tokenStorage.clearToken()
-                            backStack.clear()
-                            backStack.add(Screen.Auth)
+                        onNavigateToContribution = { id ->
+                            backStack.add(Screen.ContributionDetail(id))
                         },
+                        onLogout = logout,
                     )
                 }
             }

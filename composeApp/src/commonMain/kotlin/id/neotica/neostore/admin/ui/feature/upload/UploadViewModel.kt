@@ -3,6 +3,8 @@ package id.neotica.neostore.admin.ui.feature.upload
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.neotica.neostore.admin.domain.model.RegisterAppRequest
+import id.neotica.neostore.admin.domain.remote.CategoriesRepository
+import id.neotica.neostore.admin.domain.remote.ContributorsRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.platform.PlatformFile
 import id.neotica.neostore.admin.platform.platformFileFromBytes
@@ -15,12 +17,22 @@ import kotlinx.coroutines.withContext
 import net.dongliu.apk.parser.ByteArrayApkFile
 
 class UploadViewModel(
-    private val repository: FileRepository
+    private val repository: FileRepository,
+    private val contributorsRepository: ContributorsRepository,
+    private val categoriesRepository: CategoriesRepository,
 ): ViewModel() {
     private val _uiState = MutableStateFlow(UploadUiState())
     val uiState = _uiState.asStateFlow()
 
     private var currentFile: PlatformFile? = null
+
+    init { loadCategories() }
+
+    fun loadCategories() = viewModelScope.launch {
+        categoriesRepository.getCategories().onSuccess { cats ->
+            _uiState.update { it.copy(categories = cats) }
+        }
+    }
 
     fun clear(type: ClearState) {
         when (type) {
@@ -242,6 +254,24 @@ class UploadViewModel(
 
     fun setMaxSdk(maxSdk: String) = _uiState.update { it.copy(maxSdk = maxSdk.filter { char -> char.isDigit() }) }
 
+    fun setTitle(title: String) = _uiState.update { it.copy(title = title) }
+    fun setDescription(description: String) = _uiState.update { it.copy(description = description) }
+    fun setDeveloper(developer: String) = _uiState.update { it.copy(developer = developer) }
+    fun setCategory(slug: String?) = _uiState.update { it.copy(category = slug ?: "") }
+    fun addSecondaryCategory(slug: String?) {
+        if (slug == null) return
+        _uiState.update { it.copy(secondaryCategorySlugs = (it.secondaryCategorySlugs + slug).distinct()) }
+    }
+    fun removeSecondaryCategory(slug: String) = _uiState.update {
+        it.copy(secondaryCategorySlugs = it.secondaryCategorySlugs - slug)
+    }
+    fun addScreenshots(files: List<PlatformFile>) = _uiState.update {
+        it.copy(screenshots = it.screenshots + files)
+    }
+    fun removeScreenshot(index: Int) = _uiState.update {
+        it.copy(screenshots = it.screenshots.filterIndexed { i, _ -> i != index })
+    }
+
     fun checkLatestVersion() = viewModelScope.launch {
         val result = repository.checkLatestVersion(_uiState.value.apkFileFolder)
 
@@ -383,6 +413,52 @@ class UploadViewModel(
                 _uiState.update { it.copy(statusMessage = "Auto-registration failed: ${e.message} ❌", isLoading = false) }
                 updateQueueStatus(file, FileStatus.FAILED, e.message)
             }
+        }
+    }
+
+    fun submitContribution() {
+        val currentState = _uiState.value
+        val file = currentFile ?: return
+        if (currentState.isLoading || currentState.filePath.isBlank()) return
+        if (currentState.apkFileFolder.isBlank() || currentState.versionName.isBlank() || currentState.versionCode.isBlank()) {
+            _uiState.update { it.copy(statusMessage = "Please fill in package name, version name and version code!") }
+            return
+        }
+        if (currentState.title.isBlank()) {
+            _uiState.update { it.copy(statusMessage = "Title is required for a new app submission.") }
+            return
+        }
+
+        _uiState.update { it.copy(isLoading = true, statusMessage = "Submitting for review...") }
+
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                contributorsRepository.submitContribution(
+                    apk = file,
+                    icon = currentState.iconByteArray,
+                    screenshots = currentState.screenshots,
+                    packageName = currentState.apkFileFolder,
+                    versionName = currentState.versionName,
+                    versionCode = currentState.versionCode,
+                    title = currentState.title,
+                    description = currentState.description,
+                    developer = currentState.developer,
+                    category = currentState.category,
+                    categories = currentState.secondaryCategorySlugs,
+                )
+            }
+
+            result
+                .onSuccess { contribution ->
+                    _uiState.update {
+                        it.copy(isLoading = false, statusMessage = "Submitted for review ✅ (${contribution.status.name})")
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(isLoading = false, statusMessage = "Submit failed: ${error.message} ❌")
+                    }
+                }
         }
     }
 }

@@ -16,13 +16,14 @@ fun AppNavigationBar(
     currentScreen: MainScreenType,
     onNavigate: (MainScreenType) -> Unit,
     modifier: Modifier = Modifier,
+    items: List<NavItem> = navItems,
 ) {
     NavigationBar(
         containerColor = DarkPrimaryCard,
         tonalElevation = 0.dp,
         modifier = modifier,
     ) {
-        navItems.forEach { item ->
+        items.forEach { item ->
             NavigationBarItem(
                 selected = currentScreen == item.type
                         || currentScreen == MainScreenType.DETAIL && item.type == MainScreenType.FEEDS,

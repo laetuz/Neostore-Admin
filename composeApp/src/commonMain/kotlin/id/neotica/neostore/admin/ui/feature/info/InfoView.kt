@@ -85,7 +85,7 @@ private fun BuildInfoCard() {
         ) {
             SectionTitle("Build")
             InfoRow("Version", BuildConfig.APP_VERSION)
-            InfoRow("Package", "Neostore Admin")
+            InfoRow("Package", "HoloMarket Console")
             InfoRow("Kotlin", "2.4.10")
             InfoRow("Compose", "1.11.1")
             InfoRow("JDK", "21+")
@@ -140,7 +140,7 @@ private fun AboutCard() {
         ) {
             SectionTitle("About")
             Text(
-                text = "Neostore Admin is a desktop dashboard for managing and uploading APKs to the HoloMarket. Built with Compose Multiplatform.",
+                text = "HoloMarket Console is a dashboard for managing and uploading APKs to the HoloMarket. Built with Compose Multiplatform.",
                 color = TransparentText40,
                 style = MaterialTheme.typography.bodySmall,
             )

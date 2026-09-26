@@ -20,6 +20,7 @@ fun AppNavigationRail(
     currentScreen: MainScreenType,
     onNavigate: (MainScreenType) -> Unit,
     modifier: Modifier = Modifier,
+    items: List<NavItem> = navItems,
 ) {
     NavigationRail(
         containerColor = DarkPrimaryCard,
@@ -28,7 +29,7 @@ fun AppNavigationRail(
             .width(80.dp),
     ) {
         Spacer(Modifier.height(8.dp))
-        navItems.forEach { item ->
+        items.forEach { item ->
             NavigationRailItem(
                 selected = currentScreen == item.type
                         || currentScreen == MainScreenType.DETAIL && item.type == MainScreenType.FEEDS,

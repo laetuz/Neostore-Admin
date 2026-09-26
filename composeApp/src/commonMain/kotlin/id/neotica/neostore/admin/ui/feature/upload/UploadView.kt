@@ -36,9 +36,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import id.neotica.neostore.admin.domain.model.contributor.ContributorRole
 import id.neotica.neostore.admin.platform.rememberPlatformFileDropTarget
 import id.neotica.neostore.admin.platform.rememberPlatformFilePicker
+import id.neotica.neostore.admin.platform.rememberPlatformImagesPicker
 import id.neotica.neostore.admin.ui.components.ButtonBasic
+import id.neotica.neostore.admin.ui.components.CategoryMultiSelect
+import id.neotica.neostore.admin.ui.components.CategorySelect
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCard
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
@@ -48,6 +52,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun UploadView(
+    role: ContributorRole = ContributorRole.OWNER,
     viewModel: UploadViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -62,13 +67,16 @@ fun UploadView(
     )
 
     val pickFiles = rememberPlatformFilePicker(onFilesPicked = viewModel::addFilesToQueue)
+    val pickScreenshots = rememberPlatformImagesPicker(onImagesPicked = viewModel::addScreenshots)
 
     UploadViewContent(
         uiState = uiState,
+        role = role,
         targetSite = targetSite,
         isDragging = isDragging,
         dropTarget = dropTarget,
         onBrowseFiles = pickFiles,
+        onPickScreenshots = pickScreenshots,
         onApkFileFolderChange = viewModel::setApkFileFolder,
         onVersionNameChange = viewModel::setVersionName,
         onVersionCodeChange = viewModel::setVersionCode,
@@ -77,9 +85,17 @@ fun UploadView(
         onMaxSdkChange = viewModel::setMaxSdk,
         onCheckLatest = viewModel::checkLatestVersion,
         onUpload = viewModel::upload,
+        onSubmitContribution = viewModel::submitContribution,
         onStartBulkUpload = viewModel::startBulkUpload,
         onClearAll = { viewModel.clear(ClearState.ALL) },
         onClearUpload = { viewModel.clear(ClearState.UPLOAD) },
+        onTitleChange = viewModel::setTitle,
+        onDescriptionChange = viewModel::setDescription,
+        onDeveloperChange = viewModel::setDeveloper,
+        onCategoryChange = viewModel::setCategory,
+        onAddSecondaryCategory = viewModel::addSecondaryCategory,
+        onRemoveSecondaryCategory = viewModel::removeSecondaryCategory,
+        onRemoveScreenshot = viewModel::removeScreenshot,
     )
 }
 
@@ -87,10 +103,12 @@ fun UploadView(
 @Composable
 private fun UploadViewContent(
     uiState: UploadUiState,
+    role: ContributorRole,
     targetSite: TargetUpload,
     isDragging: Boolean,
     dropTarget: DragAndDropTarget,
     onBrowseFiles: () -> Unit,
+    onPickScreenshots: () -> Unit,
     onApkFileFolderChange: (String) -> Unit,
     onVersionNameChange: (String) -> Unit,
     onVersionCodeChange: (String) -> Unit,
@@ -99,9 +117,17 @@ private fun UploadViewContent(
     onMaxSdkChange: (String) -> Unit,
     onCheckLatest: () -> Unit,
     onUpload: () -> Unit,
+    onSubmitContribution: () -> Unit,
     onStartBulkUpload: () -> Unit,
     onClearAll: () -> Unit,
     onClearUpload: () -> Unit,
+    onTitleChange: (String) -> Unit = {},
+    onDescriptionChange: (String) -> Unit = {},
+    onDeveloperChange: (String) -> Unit = {},
+    onCategoryChange: (String?) -> Unit = {},
+    onAddSecondaryCategory: (String?) -> Unit = {},
+    onRemoveSecondaryCategory: (String) -> Unit = {},
+    onRemoveScreenshot: (Int) -> Unit = {},
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isCompact = maxWidth < 600.dp
@@ -175,6 +201,79 @@ private fun UploadViewContent(
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     maxLines = 4,
                 )
+            }
+        }
+
+        if (role == ContributorRole.CONTRIBUTOR) {
+            NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = "Submission Details",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color.White,
+                    )
+
+                    TextField(
+                        value = uiState.title,
+                        onValueChange = onTitleChange,
+                        label = { Text("Title (required for a new app)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    TextField(
+                        value = uiState.description,
+                        onValueChange = onDescriptionChange,
+                        label = { Text("Description") },
+                        minLines = 3,
+                        maxLines = 6,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    TextField(
+                        value = uiState.developer,
+                        onValueChange = onDeveloperChange,
+                        label = { Text("Developer") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    CategorySelect(
+                        categories = uiState.categories,
+                        selectedSlug = uiState.category.ifEmpty { null },
+                        onSelect = onCategoryChange,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    CategoryMultiSelect(
+                        categories = uiState.categories,
+                        selectedSlugs = uiState.secondaryCategorySlugs,
+                        onAdd = onAddSecondaryCategory,
+                        onRemove = onRemoveSecondaryCategory,
+                        excludeSlug = uiState.category.ifEmpty { null },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    Text("Screenshots (${uiState.screenshots.size})", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                    ButtonBasic("Add Screenshots", onPickScreenshots)
+                    uiState.screenshots.forEachIndexed { index, file ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(file.name, color = DarkPrimary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                            Text(
+                                text = "\u00d7",
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.clickable { onRemoveScreenshot(index) }.padding(horizontal = 8.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -280,7 +379,9 @@ private fun UploadViewContent(
                 if (!uiState.isLoading && !uiState.isBulkProcessing && uiState.uploadQueue.isNotEmpty()) {
                     ActionButtons(
                         uiState = uiState,
+                        role = role,
                         onUpload = onUpload,
+                        onSubmitContribution = onSubmitContribution,
                         onStartBulkUpload = onStartBulkUpload,
                         onClearUpload = onClearUpload,
                         onClearAll = onClearAll,
@@ -432,18 +533,23 @@ private fun VersionInfoFields(
 @Composable
 private fun ActionButtons(
     uiState: UploadUiState,
+    role: ContributorRole,
     onUpload: () -> Unit,
+    onSubmitContribution: () -> Unit,
     onStartBulkUpload: () -> Unit,
     onClearUpload: () -> Unit,
     onClearAll: () -> Unit,
     isCompact: Boolean,
 ) {
+    val isContributor = role == ContributorRole.CONTRIBUTOR
     if (isCompact) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            if (uiState.uploadQueue.size > 1) {
+            if (isContributor) {
+                ButtonBasic("Submit for Review", onSubmitContribution)
+            } else if (uiState.uploadQueue.size > 1) {
                 ButtonBasic("Start Bulk Upload", onStartBulkUpload)
             } else {
                 ButtonBasic("Upload", onUpload)
@@ -456,7 +562,9 @@ private fun ActionButtons(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            if (uiState.uploadQueue.size > 1) {
+            if (isContributor) {
+                ButtonBasic("Submit for Review", onSubmitContribution)
+            } else if (uiState.uploadQueue.size > 1) {
                 ButtonBasic("Start Bulk Upload", onStartBulkUpload)
             } else {
                 ButtonBasic("Upload", onUpload)
@@ -485,10 +593,12 @@ private fun UploadViewPreview() {
             maxSdk = "21",
             statusMessage = "",
         ),
+        role = ContributorRole.OWNER,
         targetSite = TargetUpload.NEOSTORE,
         isDragging = false,
         dropTarget = fakeDropTarget,
         onBrowseFiles = {},
+        onPickScreenshots = {},
         onApkFileFolderChange = {},
         onVersionNameChange = {},
         onVersionCodeChange = {},
@@ -497,6 +607,7 @@ private fun UploadViewPreview() {
         onMaxSdkChange = {},
         onCheckLatest = {},
         onUpload = {},
+        onSubmitContribution = {},
         onStartBulkUpload = {},
         onClearAll = {},
         onClearUpload = {},

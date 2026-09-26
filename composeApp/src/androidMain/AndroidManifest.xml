@@ -5,7 +5,7 @@
 
     <application
         android:name=".NeostoreAdminApplication"
-        android:label="Neostore Admin"
+        android:label="HoloMarket Console"
         android:supportsRtl="true"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.NeostoreAdmin">

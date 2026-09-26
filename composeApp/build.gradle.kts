@@ -92,7 +92,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "Neostore Admin"
+            packageName = "HoloMarket Console"
             packageVersion = appVersion
 
             macOS {
