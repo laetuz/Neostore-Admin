@@ -14,6 +14,8 @@ sealed interface Screen : NavKey {
     @Serializable data object Contributions : Screen
     @Serializable data class ContributionDetail(val id: String) : Screen
     @Serializable data object Contributors : Screen
+    @Serializable data object Enrich : Screen
+    @Serializable data class EnrichDetail(val packageName: String) : Screen
     @Serializable data object Info : Screen
     @Serializable data object Clipboard : Screen
 }
@@ -26,6 +28,8 @@ fun Screen.toMainScreenType(): MainScreenType? = when (this) {
     is Screen.Contributions -> MainScreenType.CONTRIBUTIONS
     is Screen.ContributionDetail -> MainScreenType.CONTRIBUTIONS
     is Screen.Contributors -> MainScreenType.CONTRIBUTORS
+    is Screen.Enrich -> MainScreenType.ENRICH
+    is Screen.EnrichDetail -> MainScreenType.ENRICH
     is Screen.Info -> MainScreenType.INFO
     is Screen.Detail -> MainScreenType.DETAIL
     is Screen.Auth, is Screen.Clipboard -> null
@@ -39,5 +43,6 @@ fun MainScreenType.toScreen(): Screen = when (this) {
     MainScreenType.ANALYTICS -> Screen.Analytics
     MainScreenType.CONTRIBUTIONS -> Screen.Contributions
     MainScreenType.CONTRIBUTORS -> Screen.Contributors
+    MainScreenType.ENRICH -> Screen.Enrich
     MainScreenType.INFO -> Screen.Info
 }

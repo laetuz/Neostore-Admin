@@ -8,11 +8,13 @@ import id.neotica.neostore.admin.data.remote.AnalyticsRepositoryImpl
 import id.neotica.neostore.admin.data.remote.CategoriesRepositoryImpl
 import id.neotica.neostore.admin.data.remote.CollectionsRepositoryImpl
 import id.neotica.neostore.admin.data.remote.ContributorsRepositoryImpl
+import id.neotica.neostore.admin.data.remote.MetadataScraperImpl
 import id.neotica.neostore.admin.domain.remote.AnalyticsRepository
 import id.neotica.neostore.admin.domain.remote.AuthRepository
 import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.CollectionsRepository
 import id.neotica.neostore.admin.domain.remote.ContributorsRepository
+import id.neotica.neostore.admin.domain.remote.MetadataScraper
 import id.neotica.neostore.admin.ui.feature.upload.UploadViewModel
 import id.neotica.neostore.admin.ui.feature.auth.LoginViewModel
 import id.neotica.neostore.admin.ui.feature.detailapp.DetailAppViewModel
@@ -25,6 +27,8 @@ import id.neotica.neostore.admin.ui.feature.collections.CollectionsViewModel
 import id.neotica.neostore.admin.ui.feature.contributions.ContributionDetailViewModel
 import id.neotica.neostore.admin.ui.feature.contributions.ContributionsViewModel
 import id.neotica.neostore.admin.ui.feature.contributors.ContributorsViewModel
+import id.neotica.neostore.admin.ui.feature.enrich.EnrichDetailViewModel
+import id.neotica.neostore.admin.ui.feature.enrich.EnrichViewModel
 import id.neotica.neostore.admin.ui.feature.session.SessionStore
 import id.neotica.neostore.admin.utils.Constants.BASE_URL
 import io.ktor.client.HttpClient
@@ -51,6 +55,7 @@ val dataModules = module {
     singleOf(::CategoriesRepositoryImpl).bind(CategoriesRepository::class)
     singleOf(::CollectionsRepositoryImpl).bind(CollectionsRepository::class)
     singleOf(::ContributorsRepositoryImpl).bind(ContributorsRepository::class)
+    singleOf(::MetadataScraperImpl).bind(MetadataScraper::class)
     single<AuthRepository> {
         AuthRepositoryImpl(
             get(),
@@ -72,6 +77,8 @@ val dataModules = module {
     viewModelOf(::ContributionsViewModel)
     viewModelOf(::ContributionDetailViewModel)
     viewModelOf(::ContributorsViewModel)
+    viewModelOf(::EnrichViewModel)
+    viewModelOf(::EnrichDetailViewModel)
 }
 
 val networkModule = module {

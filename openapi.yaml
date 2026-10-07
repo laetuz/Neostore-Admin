@@ -1,0 +1,1801 @@
+openapi: "3.0.3"
+info:
+  title: Neostore API
+  description: Android APK store backend
+  version: "1.8.0"
+servers:
+  - url: http://localhost:8084
+    description: Local dev
+paths:
+  /:
+    get:
+      summary: Health check
+      operationId: health
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /apps:
+    get:
+      summary: List all apps
+      operationId: listApps
+      responses:
+        "200":
+          description: App list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppModel"
+
+  /apps/feed:
+    get:
+      summary: Home feed (paginated, excludes adult)
+      operationId: homeFeed
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedFeed"
+
+  /apps/adult-feed:
+    get:
+      summary: Adult feed (paginated)
+      operationId: adultFeed
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated adult feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedFeed"
+
+  /apps/{packageName}:
+    get:
+      summary: App detail with versions and review stats
+      operationId: appDetail
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: App detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppDetail"
+        "404":
+          description: App not found
+
+  /apps/{packageName}/latest:
+    get:
+      summary: Latest version of an app
+      operationId: latestVersion
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Latest version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+        "404":
+          description: App not found
+
+  /apps/{packageName}/reviews:
+    get:
+      summary: Paginated reviews for an app
+      operationId: getReviews
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews with stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  average_rating:
+                    type: number
+                  total_reviews:
+                    type: integer
+                  reviews:
+                    $ref: "#/components/schemas/PaginatedReviews"
+        "404":
+          description: App not found
+    post:
+      summary: Create or update your own review (upsert)
+      operationId: upsertReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        "200":
+          description: Review created/updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          description: Missing/invalid JWT
+        "503":
+          description: User service unavailable
+    delete:
+      summary: Delete your own review
+      operationId: deleteReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Review deleted
+        "401":
+          description: Missing/invalid JWT
+        "404":
+          description: No review found
+
+  /categories:
+    get:
+      summary: All categories as a tree
+      operationId: categoryTree
+      responses:
+        "200":
+          description: Category tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryTree"
+
+  /categories/{slug}:
+    get:
+      summary: Single category with children
+      operationId: getCategory
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryTree"
+        "404":
+          description: Category not found
+
+  /categories/{slug}/children:
+    get:
+      summary: Direct children of a category
+      operationId: getCategoryChildren
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Child categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /apps/collections/{slug}:
+    get:
+      summary: Collection feed (paginated)
+      operationId: collectionFeed
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated collection feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedFeed"
+        "404":
+          description: Collection not found
+
+  /collections:
+    get:
+      summary: List all collections
+      operationId: listCollections
+      responses:
+        "200":
+          description: Collection list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppCollection"
+
+  /collections/{slug}:
+    get:
+      summary: Single collection metadata
+      operationId: getCollection
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Collection metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppCollection"
+        "404":
+          description: Collection not found
+
+  /collections/organizer:
+    get:
+      summary: Get ordered list of selected collections
+      operationId: collectionOrganizer
+      responses:
+        "200":
+          description: Ordered map of organizer items
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/CollectionOrganizerItem"
+
+  /admin/collections/organizer:
+    get:
+      summary: List all organizer entries (admin)
+      operationId: adminListOrganizer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Organizer list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionOrganizerItem"
+    post:
+      summary: Add a collection to the organizer
+      operationId: addToOrganizer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddToOrganizerRequest"
+      responses:
+        "201":
+          description: Collection added to organizer
+        "409":
+          description: Collection slug not found or already in organizer
+    put:
+      summary: Update sort order of an organizer item
+      operationId: updateOrganizerItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganizerItemRequest"
+      responses:
+        "200":
+          description: Organizer item updated
+        "404":
+          description: Collection slug not found in organizer
+
+  /admin/collections/organizer/{slug}:
+    delete:
+      summary: Remove a collection from the organizer
+      operationId: removeFromOrganizer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Collection removed from organizer
+        "404":
+          description: Collection slug not found in organizer
+
+  /admin/apps:
+    post:
+      summary: Register a new app
+      operationId: registerApp
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterAppRequest"
+      responses:
+        "201":
+          description: App registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppModel"
+        "409":
+          description: App already exists
+
+  /admin/apps/{packageName}:
+    put:
+      summary: Edit an existing app
+      operationId: editApp
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppRequest"
+      responses:
+        "200":
+          description: App updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppModel"
+        "404":
+          description: App not found
+    delete:
+      summary: Unregister an app and delete its S3 files
+      operationId: unregisterApp
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: App unregistered
+        "404":
+          description: App not found
+        "500":
+          description: Failed to delete S3 files
+
+  /admin/apps/{packageName}/versions:
+    post:
+      summary: Publish a new version
+      operationId: publishVersion
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishVersionRequest"
+      responses:
+        "200":
+          description: Version published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+        "404":
+          description: Package not found
+
+  /admin/apps/{packageName}/versions/{versionId}:
+    delete:
+      summary: Delete a version and its S3 file
+      operationId: deleteVersion
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Version deleted
+        "404":
+          description: Version not found
+        "500":
+          description: Failed to delete S3 file
+    put:
+      summary: Update a version's description (changelog)
+      operationId: updateVersionChangelog
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVersionChangelogRequest"
+      responses:
+        "200":
+          description: Version updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+        "404":
+          description: Version not found
+
+  /admin/apps/{packageName}/screenshots:
+    post:
+      summary: Upload screenshots for an app (batch multipart)
+      operationId: uploadScreenshots
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: Screenshots uploaded (full AppModel returned)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppModel"
+        "400":
+          description: Unsupported image type or upload failed
+        "404":
+          description: App not found
+        "500":
+          description: Failed to save screenshots
+    delete:
+      summary: Delete a screenshot (S3-first)
+      operationId: deleteScreenshot
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteScreenshotRequest"
+      responses:
+        "200":
+          description: Screenshot deleted (updated AppModel returned)
+        "404":
+          description: Screenshot or app not found
+        "500":
+          description: Failed to delete S3 file
+
+  /admin/apps/{packageName}/screenshots/reorder:
+    put:
+      summary: Reorder screenshots
+      operationId: reorderScreenshots
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderScreenshotsRequest"
+      responses:
+        "200":
+          description: Screenshots reordered (updated AppModel returned)
+        "404":
+          description: App not found
+
+  /admin/apps/{packageName}/github/reset-tag:
+    post:
+      summary: Reset GitHub tag for re-check
+      operationId: resetGithubTag
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: GitHub tag reset
+
+  /admin/categories:
+    post:
+      summary: Create a category
+      operationId: createCategory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "409":
+          description: Category already exists
+
+  /admin/categories/{slug}:
+    put:
+      summary: Update a category
+      operationId: updateCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "404":
+          description: Category not found
+    delete:
+      summary: Delete a category
+      operationId: deleteCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Category deleted
+        "409":
+          description: Category has children or apps using it
+
+  /admin/collections:
+    post:
+      summary: Create a collection
+      operationId: createCollection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCollectionRequest"
+      responses:
+        "201":
+          description: Collection created
+        "409":
+          description: Collection already exists
+
+  /admin/collections/{slug}:
+    put:
+      summary: Update a collection's title or description
+      operationId: updateCollection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCollectionRequest"
+      responses:
+        "200":
+          description: Collection updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppCollection"
+        "404":
+          description: Collection not found
+    delete:
+      summary: Delete a collection (fails if apps remain inside)
+      operationId: deleteCollection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Collection deleted
+        "404":
+          description: Collection not found
+        "409":
+          description: Collection still has apps in it
+
+  /admin/collections/{slug}/items:
+    post:
+      summary: Add an app to collection (evicts existing at same sort_order)
+      operationId: addAppToCollection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAppToCollectionRequest"
+      responses:
+        "200":
+          description: App added
+        "404":
+          description: Collection or app not found
+
+  /admin/collections/{slug}/items/{packageName}:
+    delete:
+      summary: Remove an app from collection
+      operationId: removeAppFromCollection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: packageName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: App removed
+        "404":
+          description: Collection or app not found
+
+  /public/submit:
+    post:
+      summary: Public APK submission (stored on Telegram, notified to Discord)
+      operationId: publicSubmit
+      tags:
+        - Public
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: APK file (max 30 MB)
+                screenshots:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                title:
+                  type: string
+                description:
+                  type: string
+                developer:
+                  type: string
+                categories:
+                  type: string
+                  description: Comma-separated slugs
+      responses:
+        "202":
+          description: Accepted (processed in the background)
+        "400":
+          description: Invalid submission
+        "429":
+          description: Rate limited (5/min per IP)
+
+  /public/holomarket/latest:
+    get:
+      summary: Latest HoloMarket version with a masked download URL
+      operationId: publicHolomarketLatest
+      tags:
+        - Public
+      responses:
+        "200":
+          description: Latest version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLatestResponse"
+        "404":
+          description: HoloMarket not found
+        "429":
+          description: Rate limited (60/min per IP)
+
+  /public/holomarket/download:
+    get:
+      summary: Download the HoloMarket APK via a signed token
+      operationId: publicHolomarketDownload
+      tags:
+        - Public
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: APK bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Missing or malformed token
+        "403":
+          description: Invalid or expired token
+        "502":
+          description: Storage fetch failed
+
+  /admin/contributors:
+    get:
+      summary: List the admin contributor hotlist (owner only)
+      operationId: listContributors
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Hotlist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminContributor"
+        "401":
+          description: Missing/invalid JWT
+        "403":
+          description: Owner role required
+    post:
+      summary: Add a contributor to the hotlist (owner only)
+      operationId: addContributor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddContributorRequest"
+      responses:
+        "200":
+          description: Contributor added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminContributor"
+        "401":
+          description: Missing/invalid JWT
+        "403":
+          description: Owner role required
+
+  /admin/contributors/me:
+    get:
+      summary: Get the caller's own contribution role
+      description: Usable by any authenticated user. Returns OWNER, CONTRIBUTOR, or NONE.
+      operationId: getMyContributorRole
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Caller role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributorMe"
+        "401":
+          description: Missing/invalid JWT
+
+  /admin/contributors/users:
+    get:
+      summary: Search users by username (owner only)
+      operationId: searchContributorUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching users (id + username only)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSummary"
+        "403":
+          description: Owner role required
+        "502":
+          description: User service unavailable
+
+  /admin/contributors/{userId}:
+    put:
+      summary: Update a contributor role (owner only)
+      operationId: updateContributor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateContributorRoleRequest"
+      responses:
+        "200":
+          description: Updated
+        "403":
+          description: Owner role required
+        "404":
+          description: Contributor not found
+    delete:
+      summary: Remove a contributor from the hotlist (owner only)
+      operationId: removeContributor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed
+        "403":
+          description: Owner role required
+        "404":
+          description: Contributor not found
+
+  /admin/contributions:
+    get:
+      summary: List pending contributions (hotlist members)
+      operationId: listContributions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, APPROVED, DECLINED]
+      responses:
+        "200":
+          description: Contributions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PendingContribution"
+        "401":
+          description: Missing/invalid JWT
+        "403":
+          description: Not a contributor
+    post:
+      summary: Submit a staged contribution (hotlist members)
+      operationId: submitContribution
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - package_name
+                - version_name
+                - version_code
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: APK
+                icon:
+                  type: string
+                  format: binary
+                screenshots:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                package_name:
+                  type: string
+                version_name:
+                  type: string
+                version_code:
+                  type: integer
+                title:
+                  type: string
+                description:
+                  type: string
+                developer:
+                  type: string
+                category:
+                  type: string
+                categories:
+                  type: string
+                  description: Comma-separated slugs
+      responses:
+        "200":
+          description: Contribution staged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingContribution"
+        "400":
+          description: Invalid submission
+        "403":
+          description: Not a contributor
+
+  /admin/contributions/{id}:
+    get:
+      summary: Get a contribution (hotlist members)
+      operationId: getContribution
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contribution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingContribution"
+        "404":
+          description: Not found
+
+  /admin/contributions/{id}/download:
+    get:
+      summary: Download the staged APK (hotlist members)
+      operationId: downloadContribution
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: APK bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "502":
+          description: Storage fetch failed
+
+  /admin/contributions/{id}/screenshots:
+    post:
+      summary: Add staged screenshots to a PENDING contribution (hotlist members)
+      operationId: addContributionScreenshots
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                screenshots:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: Screenshots added
+        "409":
+          description: Contribution is not PENDING
+
+  /admin/contributions/{id}/screenshots/{n}:
+    delete:
+      summary: Remove a staged screenshot (hotlist members)
+      operationId: removeContributionScreenshot
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: n
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Screenshot removed
+        "404":
+          description: Screenshot not found
+
+  /admin/contributions/{id}/declined:
+    delete:
+      summary: Purge a DECLINED contribution and its staged files (hotlist members)
+      operationId: purgeContribution
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Purged
+        "409":
+          description: Contribution is not DECLINED
+
+  /admin/contributions/{id}/approve:
+    put:
+      summary: Approve a contribution and publish it (owner only)
+      operationId: approveContribution
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved and published
+        "403":
+          description: Owner role required
+        "409":
+          description: Already decided
+
+  /admin/contributions/{id}/decline:
+    put:
+      summary: Decline a contribution, retaining its files (owner only)
+      operationId: declineContribution
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclineContributionRequest"
+      responses:
+        "200":
+          description: Declined
+        "403":
+          description: Owner role required
+        "409":
+          description: Already decided
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PublicLatestResponse:
+      type: object
+      properties:
+        title:
+          type: string
+        icon_url:
+          type: string
+        version_name:
+          type: string
+        version_code:
+          type: integer
+        file_url:
+          type: string
+          description: Masked, signed download URL (7-day expiry)
+        changelog:
+          type: string
+        min_sdk:
+          type: integer
+        max_sdk:
+          type: integer
+        created_at:
+          type: integer
+          format: int64
+    AdminContributor:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [CONTRIBUTOR, OWNER]
+        added_by:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        active:
+          type: boolean
+    AddContributorRequest:
+      type: object
+      description: Provide at least one of `user_id` or `username`.
+      anyOf:
+        - required: [user_id]
+        - required: [username]
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [CONTRIBUTOR, OWNER]
+          default: CONTRIBUTOR
+    ContributorMe:
+      type: object
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [OWNER, CONTRIBUTOR, NONE]
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+    UpdateContributorRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [CONTRIBUTOR, OWNER]
+    DeclineContributionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    PendingContribution:
+      type: object
+      properties:
+        id:
+          type: string
+        package_name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        developer:
+          type: string
+        category:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        version_name:
+          type: string
+        version_code:
+          type: integer
+        changelog:
+          type: string
+        apk_url:
+          type: string
+        icon_url:
+          type: string
+        screenshots:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, DECLINED]
+        submitted_by:
+          type: string
+        submitted_at:
+          type: integer
+          format: int64
+        decided_by:
+          type: string
+        decided_at:
+          type: integer
+          format: int64
+        decline_reason:
+          type: string
+    AppModel:
+      type: object
+      properties:
+        id:
+          type: string
+        package_name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        icon_url:
+          type: string
+        developer:
+          type: string
+        github_repo:
+          type: string
+        last_github_tag:
+          type: string
+        created_at:
+          type: integer
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppVersion"
+        screenshots:
+          type: array
+          items:
+            type: string
+
+    AppDetail:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/AppModel"
+        - type: object
+          properties:
+            average_rating:
+              type: number
+            total_reviews:
+              type: integer
+
+    AppVersion:
+      type: object
+      properties:
+        id:
+          type: string
+        app_id:
+          type: string
+        version_name:
+          type: string
+        version_code:
+          type: integer
+        file_url:
+          type: string
+        changelog:
+          type: string
+        min_sdk:
+          type: integer
+        max_sdk:
+          type: integer
+        created_at:
+          type: integer
+
+    AppFeedItem:
+      type: object
+      properties:
+        package_name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        icon_url:
+          type: string
+
+    PaginatedFeed:
+      type: object
+      required: [data, page, limit, total_items, total_pages]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppFeedItem"
+        page:
+          type: integer
+        limit:
+          type: integer
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+
+    PaginatedReviews:
+      type: object
+      required: [data, page, limit, total_items, total_pages]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        page:
+          type: integer
+        limit:
+          type: integer
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+        app_id:
+          type: string
+        user_id:
+          type: string
+        username:
+          type: string
+        rating:
+          type: integer
+        comment:
+          type: string
+        created_at:
+          type: integer
+
+    Category:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        parent_slug:
+          type: string
+
+    CategoryTree:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        parent_slug:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+
+    RegisterAppRequest:
+      type: object
+      required:
+        - package_name
+        - title
+      properties:
+        package_name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        developer:
+          type: string
+        github_repo:
+          type: string
+
+    UpdateAppRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        icon_url:
+          type: string
+        developer:
+          type: string
+        github_repo:
+          type: string
+
+    PublishVersionRequest:
+      type: object
+      required:
+        - version_name
+        - version_code
+        - file_url
+      properties:
+        version_name:
+          type: string
+        version_code:
+          type: integer
+        file_url:
+          type: string
+        changelog:
+          type: string
+        min_sdk:
+          type: integer
+        max_sdk:
+          type: integer
+
+    UpdateVersionChangelogRequest:
+      type: object
+      properties:
+        changelog:
+          type: string
+
+    DeleteScreenshotRequest:
+      type: object
+      required:
+        - file_url
+      properties:
+        file_url:
+          type: string
+
+    ReorderScreenshotsRequest:
+      type: object
+      required:
+        - order
+      properties:
+        order:
+          type: array
+          items:
+            type: string
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+        - slug
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        parent_slug:
+          type: string
+
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        parent_slug:
+          type: string
+
+    AppCollection:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+
+    UpdateCollectionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+    CreateCollectionRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        custom_slug:
+          type: string
+
+    AddAppToCollectionRequest:
+      type: object
+      required:
+        - package_name
+        - sort_order
+      properties:
+        package_name:
+          type: string
+        sort_order:
+          type: integer
+
+    CollectionOrganizerItem:
+      type: object
+      properties:
+        index:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+
+    AddToOrganizerRequest:
+      type: object
+      required:
+        - collection_slug
+        - sort_order
+      properties:
+        collection_slug:
+          type: string
+        sort_order:
+          type: integer
+
+    UpdateOrganizerItemRequest:
+      type: object
+      required:
+        - sort_order
+      properties:
+        sort_order:
+          type: integer

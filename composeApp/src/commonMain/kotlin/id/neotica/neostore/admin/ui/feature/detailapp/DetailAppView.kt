@@ -68,7 +68,8 @@ import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET_PUBLIC
 fun DetailAppView(
     viewModel: DetailAppViewModel = koinViewModel(),
     packageName: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEnrich: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val openCategoryTrigger by viewModel.openCategoryTrigger.collectAsState()
@@ -132,6 +133,7 @@ fun DetailAppView(
         onRequestUnregister = viewModel::requestUnregister,
         onCancelUnregister = viewModel::cancelUnregister,
         onUnregisterApp = { viewModel.unregisterApp { onClick(); viewModel.clear() } },
+        onEnrich = onEnrich,
     )
 }
 
@@ -166,6 +168,7 @@ private fun DetailAppViewContent(
     onRequestUnregister: () -> Unit = {},
     onCancelUnregister: () -> Unit = {},
     onUnregisterApp: () -> Unit = {},
+    onEnrich: () -> Unit = {},
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -339,7 +342,10 @@ private fun DetailAppViewContent(
                     ButtonBasic("Update", onUpdate)
                 }
 
-                ButtonBasic("Reset GitHub Tag", onResetGithubTag)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ButtonBasic("Reset GitHub Tag", onResetGithubTag)
+                    ButtonBasic("Enrich", onEnrich)
+                }
 
                 Box(
                     modifier = Modifier

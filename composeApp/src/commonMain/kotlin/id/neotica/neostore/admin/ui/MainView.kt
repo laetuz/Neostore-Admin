@@ -33,6 +33,7 @@ import id.neotica.neostore.admin.ui.feature.analytics.AnalyticsView
 import id.neotica.neostore.admin.ui.feature.categories.CategoriesView
 import id.neotica.neostore.admin.ui.feature.contributions.ContributionsView
 import id.neotica.neostore.admin.ui.feature.contributors.ContributorsView
+import id.neotica.neostore.admin.ui.feature.enrich.EnrichView
 import id.neotica.neostore.admin.ui.feature.feed.FeedView
 import id.neotica.neostore.admin.ui.feature.info.InfoView
 import id.neotica.neostore.admin.ui.feature.upload.UploadView
@@ -51,6 +52,7 @@ fun MainView(
     onNavigateTab: (MainScreenType) -> Unit,
     onNavigateToDetail: (AppFeedItemResponse) -> Unit,
     onNavigateToContribution: (String) -> Unit = {},
+    onNavigateToEnrich: (String) -> Unit = {},
     onLogout: () -> Unit = {},
 ) {
     val screenType = screen.toMainScreenType() ?: MainScreenType.FEEDS
@@ -87,6 +89,7 @@ fun MainView(
                             myUserId = myUserId,
                             onNavigateToDetail = onNavigateToDetail,
                             onNavigateToContribution = onNavigateToContribution,
+                            onNavigateToEnrich = onNavigateToEnrich,
                         )
                     }
                 }
@@ -119,6 +122,7 @@ fun MainView(
                                 myUserId = myUserId,
                                 onNavigateToDetail = onNavigateToDetail,
                                 onNavigateToContribution = onNavigateToContribution,
+                                onNavigateToEnrich = onNavigateToEnrich,
                             )
                         }
                     }
@@ -179,6 +183,7 @@ private fun MainContent(
     myUserId: String,
     onNavigateToDetail: (AppFeedItemResponse) -> Unit,
     onNavigateToContribution: (String) -> Unit,
+    onNavigateToEnrich: (String) -> Unit,
 ) {
     when (screenType) {
         MainScreenType.UPLOADER -> UploadView(role = role)
@@ -192,6 +197,7 @@ private fun MainContent(
             onNavigateToDetail = onNavigateToContribution,
         )
         MainScreenType.CONTRIBUTORS -> ContributorsView()
+        MainScreenType.ENRICH -> EnrichView(onNavigateToDetail = onNavigateToEnrich)
         MainScreenType.INFO -> InfoView()
     }
 }

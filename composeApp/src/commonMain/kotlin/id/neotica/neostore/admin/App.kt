@@ -24,10 +24,12 @@ import id.neotica.neostore.admin.ui.feature.clipboard.clipboardItems
 import id.neotica.neostore.admin.ui.feature.clipboard.clipboardPageDownCount
 import id.neotica.neostore.admin.ui.feature.contributions.ContributionDetailView
 import id.neotica.neostore.admin.ui.feature.detailapp.DetailAppView
+import id.neotica.neostore.admin.ui.feature.enrich.EnrichDetailView
 import id.neotica.neostore.admin.ui.feature.session.NoAccessView
 import id.neotica.neostore.admin.ui.feature.session.SessionLoadingView
 import id.neotica.neostore.admin.ui.feature.session.SessionStore
 import id.neotica.neostore.admin.ui.navigation.Screen
+import id.neotica.neostore.admin.ui.navigation.flattenScreens
 import id.neotica.neostore.admin.ui.navigation.navItemsFor
 import id.neotica.neostore.admin.ui.navigation.toScreen
 import io.ktor.client.HttpClient
@@ -80,7 +82,7 @@ fun App(
 
     val role = currentMe.role
     val myUserId = currentMe.userId
-    val tabScreens = remember(role) { navItemsFor(role).map { it.type.toScreen() } }
+    val tabScreens = remember(role) { navItemsFor(role).flattenScreens().map { it.toScreen() } }
     val startScreen = remember(role) {
         if (role == ContributorRole.OWNER) Screen.Feed else Screen.Upload
     }
@@ -107,7 +109,7 @@ fun App(
 
                 event.isEscape -> {
                     when (backStack.lastOrNull()) {
-                        is Screen.Clipboard, is Screen.Detail, is Screen.ContributionDetail -> {
+                        is Screen.Clipboard, is Screen.Detail, is Screen.ContributionDetail, is Screen.EnrichDetail -> {
                             backStack.removeLastOrNull()
                             true
                         }
@@ -158,10 +160,15 @@ fun App(
                     is Screen.Detail -> DetailAppView(
                         packageName = key.packageName,
                         onClick = { backStack.removeLastOrNull() },
+                        onEnrich = { backStack.add(Screen.EnrichDetail(key.packageName)) },
                     )
                     is Screen.ContributionDetail -> ContributionDetailView(
                         id = key.id,
                         role = role,
+                        onBack = { backStack.removeLastOrNull() },
+                    )
+                    is Screen.EnrichDetail -> EnrichDetailView(
+                        packageName = key.packageName,
                         onBack = { backStack.removeLastOrNull() },
                     )
                     else -> MainView(
@@ -177,6 +184,9 @@ fun App(
                         },
                         onNavigateToContribution = { id ->
                             backStack.add(Screen.ContributionDetail(id))
+                        },
+                        onNavigateToEnrich = { pkg ->
+                            backStack.add(Screen.EnrichDetail(pkg))
                         },
                         onLogout = logout,
                     )

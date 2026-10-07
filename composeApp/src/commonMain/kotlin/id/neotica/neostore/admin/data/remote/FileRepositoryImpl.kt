@@ -210,6 +210,17 @@ class FileRepositoryImpl(
         Result.failure(e)
     }
 
+    override suspend fun listApps(): Result<List<AppDetailResponse>> = try {
+        val response = httpClient.get("$BASE_URL/neostore/apps")
+        if (response.status.isSuccess()) {
+            Result.success(response.body())
+        } else {
+            Result.failure(Exception("Failed to list apps: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     suspend fun uploadRaw(
         file: PlatformFile,
         onProgress: (Float) -> Unit
@@ -317,8 +328,9 @@ class FileRepositoryImpl(
                 MultiPartFormDataContent(
                     formData {
                         files.forEach { file ->
+                            val isJpeg = file.name.endsWith(".jpg", true) || file.name.endsWith(".jpeg", true)
                             append("files", file.readBytes(), Headers.build {
-                                append(HttpHeaders.ContentType, "image/png")
+                                append(HttpHeaders.ContentType, if (isJpeg) "image/jpeg" else "image/png")
                                 append(
                                     HttpHeaders.ContentDisposition,
                                     "form-data; name=\"files\"; filename=\"${file.name}\""

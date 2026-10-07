@@ -14,7 +14,7 @@ data class AppVersionResponse(
     val versionCode: Int,
     @SerialName("file_url")
     val fileUrl: String,
-    val changelog: String,
+    val changelog: String = "",
     @SerialName("min_sdk")
     val minSdk: Int? = 1,
     @SerialName("max_sdk")
