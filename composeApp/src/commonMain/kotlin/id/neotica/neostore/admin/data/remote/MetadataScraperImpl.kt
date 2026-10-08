@@ -14,6 +14,8 @@ import io.ktor.client.statement.request
 import io.ktor.http.HttpHeaders
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 class MetadataScraperImpl : MetadataScraper {
@@ -62,8 +64,9 @@ class MetadataScraperImpl : MetadataScraper {
         val resolvedTs = Regex("/web/(\\d{14})").find(resolvedUrl)?.groupValues?.get(1)
 
         val html = response.bodyAsText()
-        val parsed = parseStoreHtml(ScraperSource.WAYBACK, html)
-            ?: return Result.failure(Exception("No metadata could be parsed from Wayback"))
+        val parsed = withContext(Dispatchers.Default) {
+            parseStoreHtml(ScraperSource.WAYBACK, html)
+        } ?: return Result.failure(Exception("No metadata could be parsed from Wayback"))
 
         val snapshot = resolvedTs?.let { formatDate(it) } ?: waybackTimestamp?.let { formatDate(it) }
         return Result.success(parsed.copy(resolvedSnapshot = snapshot))
@@ -82,8 +85,10 @@ class MetadataScraperImpl : MetadataScraper {
         if (!response.status.isSuccess()) {
             return Result.failure(Exception("${source.label} returned HTTP ${response.status.value}"))
         }
-        val parsed = parseStoreHtml(source, response.bodyAsText())
-            ?: return Result.failure(Exception("No metadata could be parsed from ${source.label}"))
+        val html = response.bodyAsText()
+        val parsed = withContext(Dispatchers.Default) {
+            parseStoreHtml(source, html)
+        } ?: return Result.failure(Exception("No metadata could be parsed from ${source.label}"))
         return Result.success(parsed.copy(resolvedSnapshot = snapshot))
     }
 

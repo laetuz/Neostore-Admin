@@ -1,7 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.util.Properties
 
-val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "2.4.0").removePrefix("v")
+val appVersion = (System.getenv("GITHUB_REF_NAME") ?: "2.4.1").removePrefix("v")
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)

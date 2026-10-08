@@ -11,6 +11,7 @@ import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.domain.remote.MetadataScraper
 import id.neotica.neostore.admin.platform.compressJpeg
 import id.neotica.neostore.admin.platform.platformFileFromBytes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 
 class EnrichDetailViewModel(
     private val repo: FileRepository,
@@ -227,7 +229,7 @@ class EnrichDetailViewModel(
 
     fun toggleInclude(index: Int) {
         updateScreenshot(index) { it.copy(included = !it.included) }
-        recomputeCompressed()
+        viewModelScope.launch { recomputeCompressed() }
     }
 
     fun setQuality(quality: Int) {
@@ -239,12 +241,12 @@ class EnrichDetailViewModel(
         }
     }
 
-    private fun recomputeCompressed() {
+    private suspend fun recomputeCompressed() {
         val quality = _uiState.value.quality
         _uiState.value.screenshots.forEachIndexed { index, shot ->
             val bytes = shot.bytes
             if (!shot.included || bytes == null) return@forEachIndexed
-            val compressed = compressJpeg(bytes, quality)
+            val compressed = withContext(Dispatchers.Default) { compressJpeg(bytes, quality) }
             updateScreenshot(index) {
                 if (compressed != null) {
                     it.copy(
