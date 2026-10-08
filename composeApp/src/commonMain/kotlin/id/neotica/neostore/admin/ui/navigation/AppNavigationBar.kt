@@ -2,6 +2,7 @@ package id.neotica.neostore.admin.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -77,8 +78,9 @@ private fun RowScope.BarGroupItem(
     var expanded by remember { mutableStateOf(false) }
     val selected = item.children.any { it.type == currentScreen }
 
-    Box {
+    Box(modifier = Modifier.weight(1f)) {
         this@BarGroupItem.NavigationBarItem(
+            modifier = Modifier.fillMaxWidth(),
             selected = selected,
             onClick = { expanded = true },
             icon = {
