@@ -20,6 +20,9 @@ data class DetailAppUiState(
     val isUploadingScreenshots: Boolean = false,
     val screenshotToDelete: String? = null,
     val isUploadingIcon: Boolean = false,
+    val isExtractingIcon: Boolean = false,
+    val extractedIconBytes: ByteArray? = null,
+    val extractedIconSourceName: String = "",
     val showUnregisterConfirm: Boolean = false,
     val statusMessage: String = ""
 )

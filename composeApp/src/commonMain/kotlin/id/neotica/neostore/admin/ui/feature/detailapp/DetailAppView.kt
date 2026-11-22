@@ -1,5 +1,6 @@
 package id.neotica.neostore.admin.ui.feature.detailapp
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,6 +46,7 @@ import id.neotica.neostore.admin.domain.model.AppVersionResponse
 import id.neotica.neostore.admin.domain.model.category.response.Category
 import id.neotica.neostore.admin.platform.PlatformFile
 import id.neotica.neostore.admin.platform.installPlatformKeyDispatcher
+import id.neotica.neostore.admin.platform.rememberPlatformFilePicker
 import id.neotica.neostore.admin.platform.rememberPlatformImagePicker
 import id.neotica.neostore.admin.platform.rememberPlatformImagesPicker
 import id.neotica.neostore.admin.ui.components.ButtonBasic
@@ -59,6 +61,7 @@ import id.neotica.neostore.admin.ui.components.NeoCardSolid
 import id.neotica.neostore.admin.ui.components.PurpleGrey40
 import id.neotica.neostore.admin.ui.components.TransparentText40
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import coil3.compose.SubcomposeAsyncImage
 import id.neotica.neostore.admin.platform.rememberPlatformFileDropTarget
 import id.neotica.neostore.admin.ui.components.NeoCard
@@ -125,6 +128,9 @@ fun DetailAppView(
         onDeleteVersion = viewModel::deleteVersion,
         onBack = { onClick(); viewModel.clear() },
         onUploadIcon = viewModel::uploadIcon,
+        onExtractIconFromApk = viewModel::extractIconFromApk,
+        onUploadExtractedIcon = viewModel::uploadExtractedIcon,
+        onDiscardExtractedIcon = viewModel::discardExtractedIcon,
         onAddScreenshots = viewModel::addScreenshots,
         onRequestDeleteScreenshot = viewModel::requestDeleteScreenshot,
         onCancelDeleteScreenshot = viewModel::cancelDeleteScreenshot,
@@ -160,6 +166,9 @@ private fun DetailAppViewContent(
     onDeleteVersion: (String) -> Unit,
     onBack: () -> Unit,
     onUploadIcon: (PlatformFile) -> Unit = {},
+    onExtractIconFromApk: (PlatformFile) -> Unit = {},
+    onUploadExtractedIcon: () -> Unit = {},
+    onDiscardExtractedIcon: () -> Unit = {},
     onAddScreenshots: (List<PlatformFile>) -> Unit = {},
     onRequestDeleteScreenshot: (String) -> Unit = {},
     onCancelDeleteScreenshot: () -> Unit = {},
@@ -177,6 +186,9 @@ private fun DetailAppViewContent(
     ) {
         val isCompact = maxWidth < 600.dp
         val pickIcon = rememberPlatformImagePicker(onImagePicked = onUploadIcon)
+        val pickIconApk = rememberPlatformFilePicker(onFilesPicked = { files ->
+            files.firstOrNull()?.let(onExtractIconFromApk)
+        })
         val pickScreenshots = rememberPlatformImagesPicker(onImagesPicked = onAddScreenshots)
 
         Column(
@@ -283,26 +295,33 @@ private fun DetailAppViewContent(
                             modifier = Modifier.fillMaxWidth(),
                         )
 
+                        val iconBusy = uiState.isUploadingIcon || uiState.isExtractingIcon
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (uiState.isUploadingIcon) DarkPrimaryTransparent40 else DarkPrimaryTransparent40)
-                                    .clickable(enabled = !uiState.isUploadingIcon) {
-                                        pickIcon()
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = if (uiState.isUploadingIcon) "Uploading..." else "Browse & Upload Icon",
-                                    color = DarkPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
+                            IconActionButton(
+                                label = if (uiState.isUploadingIcon) "Uploading..." else "Upload Image",
+                                enabled = !iconBusy,
+                                onClick = { pickIcon() },
+                            )
+                            IconActionButton(
+                                label = if (uiState.isExtractingIcon) "Extracting..." else "Extract from APK",
+                                enabled = !iconBusy,
+                                onClick = { pickIconApk() },
+                            )
+                        }
+
+                        uiState.extractedIconBytes?.let { bytes ->
+                            ExtractedIconPreview(
+                                bytes = bytes,
+                                sourceName = uiState.extractedIconSourceName,
+                                isUploading = uiState.isUploadingIcon,
+                                onUpload = onUploadExtractedIcon,
+                                onPickAnother = { pickIconApk() },
+                                onDiscard = onDiscardExtractedIcon,
+                            )
                         }
 
                         TextField(
@@ -450,6 +469,91 @@ private fun DetailAppViewContent(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconActionButton(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(DarkPrimaryTransparent40)
+            .clickable(enabled = enabled) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            color = if (enabled) DarkPrimary else DarkPrimary.copy(alpha = 0.4f),
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
+@Composable
+private fun ExtractedIconPreview(
+    bytes: ByteArray,
+    sourceName: String,
+    isUploading: Boolean,
+    onUpload: () -> Unit,
+    onPickAnother: () -> Unit,
+    onDiscard: () -> Unit,
+) {
+    NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Extracted Icon",
+                color = Color.White,
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val bitmap = remember(bytes) {
+                        runCatching { bytes.decodeToImageBitmap() }.getOrNull()
+                    }
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "Extracted app icon",
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Text("Preview n/a", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = sourceName,
+                        color = TransparentText40,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ButtonBasic(
+                            if (isUploading) "Uploading..." else "Upload this Icon",
+                            onUpload,
+                        )
+                        ButtonBasic("Pick another", onPickAnother)
+                    }
+                    ButtonBasic("Discard", onDiscard)
                 }
             }
         }

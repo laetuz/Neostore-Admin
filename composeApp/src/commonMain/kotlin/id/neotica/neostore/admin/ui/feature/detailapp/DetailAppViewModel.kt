@@ -6,6 +6,8 @@ import id.neotica.neostore.admin.domain.model.UpdateAppRequest
 import id.neotica.neostore.admin.domain.remote.CategoriesRepository
 import id.neotica.neostore.admin.domain.remote.FileRepository
 import id.neotica.neostore.admin.platform.PlatformFile
+import id.neotica.neostore.admin.platform.platformFileFromBytes
+import id.neotica.neostore.admin.platform.transcodeToPng
 import id.neotica.neostore.admin.utils.Constants.BASE_URL_BUCKET_PUBLIC
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
+import net.dongliu.apk.parser.ByteArrayApkFile
 
 class DetailAppViewModel(
     private val repo: FileRepository,
@@ -125,7 +128,7 @@ class DetailAppViewModel(
             }
             uploadResult.onSuccess {
                 val iconUrl = "/buckets/neostore/$packageName/icon.jpg"
-                _uiState.update { it.copy(iconUrl = iconUrl, isUploadingIcon = false, statusMessage = "Icon uploaded. Updating app...") }
+                _uiState.update { it.copy(iconUrl = iconUrl, isUploadingIcon = false, extractedIconBytes = null, extractedIconSourceName = "", statusMessage = "Icon uploaded. Updating app...") }
                 val updateRequest = UpdateAppRequest(
                     title = _uiState.value.title,
                     description = _uiState.value.description,
@@ -144,6 +147,59 @@ class DetailAppViewModel(
                 _uiState.update { it.copy(isUploadingIcon = false, statusMessage = "Icon upload failed: $error") }
             }
         }
+    }
+
+    fun extractIconFromApk(file: PlatformFile) {
+        val packageName = _uiState.value.packageName
+        if (packageName.isBlank()) {
+            _uiState.update { it.copy(statusMessage = "No package name loaded.") }
+            return
+        }
+        if (!file.extension.equals("apk", ignoreCase = true)) {
+            _uiState.update { it.copy(statusMessage = "Please pick an .apk file.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExtractingIcon = true, statusMessage = "Extracting icon from ${file.name}...") }
+
+            val iconBytes = withContext(Dispatchers.IO) {
+                runCatching {
+                    ByteArrayApkFile(file.readBytes()).use { apk -> apk.iconFile?.data }
+                }.getOrNull()
+            }
+
+            val pngBytes = iconBytes?.let { raw ->
+                withContext(Dispatchers.Default) { transcodeToPng(raw) }
+            }
+
+            if (pngBytes != null) {
+                _uiState.update {
+                    it.copy(
+                        isExtractingIcon = false,
+                        extractedIconBytes = pngBytes,
+                        extractedIconSourceName = file.name,
+                        statusMessage = "Icon extracted. Review and upload.",
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isExtractingIcon = false,
+                        statusMessage = "No icon could be extracted from this APK.",
+                    )
+                }
+            }
+        }
+    }
+
+    fun discardExtractedIcon() = _uiState.update {
+        it.copy(extractedIconBytes = null, extractedIconSourceName = "", statusMessage = "")
+    }
+
+    fun uploadExtractedIcon() {
+        val bytes = _uiState.value.extractedIconBytes ?: return
+        uploadIcon(platformFileFromBytes("extracted_icon.png", bytes))
     }
 
     fun requestUnregister() = _uiState.update { it.copy(showUnregisterConfirm = true) }

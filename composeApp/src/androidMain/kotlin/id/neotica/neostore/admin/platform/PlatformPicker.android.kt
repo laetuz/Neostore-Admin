@@ -63,6 +63,6 @@ actual fun rememberPlatformFilePicker(onFilesPicked: (List<PlatformFile>) -> Uni
         if (uris.isNotEmpty()) picked(uris.map { platformFileFromUri(it) })
     }
     return remember {
-        { launcher.launch(arrayOf("application/vnd.android.package-archive")) }
+        { launcher.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream")) }
     }
 }
