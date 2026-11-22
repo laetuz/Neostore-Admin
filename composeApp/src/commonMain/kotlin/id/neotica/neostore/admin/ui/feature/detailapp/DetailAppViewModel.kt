@@ -127,7 +127,7 @@ class DetailAppViewModel(
                 repo.uploadIcon(file, packageName)
             }
             uploadResult.onSuccess {
-                val iconUrl = "/buckets/neostore/$packageName/icon.jpg"
+                val iconUrl = "/neostore/$packageName/icon.jpg"
                 _uiState.update { it.copy(iconUrl = iconUrl, isUploadingIcon = false, extractedIconBytes = null, extractedIconSourceName = "", statusMessage = "Icon uploaded. Updating app...") }
                 val updateRequest = UpdateAppRequest(
                     title = _uiState.value.title,
