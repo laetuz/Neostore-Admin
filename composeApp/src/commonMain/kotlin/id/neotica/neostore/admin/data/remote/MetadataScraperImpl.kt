@@ -119,6 +119,10 @@ class MetadataScraperImpl : MetadataScraper {
         }
     }
 
+    override fun clearCache() {
+        versionsCache.clear()
+    }
+
     override suspend fun fetchBytes(url: String): Result<ByteArray> = try {
         val response = ktorClient.get(url) {
             header(HttpHeaders.UserAgent, USER_AGENT)

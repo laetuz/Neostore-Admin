@@ -9,6 +9,7 @@ import id.neotica.neostore.admin.data.remote.CategoriesRepositoryImpl
 import id.neotica.neostore.admin.data.remote.CollectionsRepositoryImpl
 import id.neotica.neostore.admin.data.remote.ContributorsRepositoryImpl
 import id.neotica.neostore.admin.data.remote.MetadataScraperImpl
+import id.neotica.neostore.admin.domain.CacheManager
 import id.neotica.neostore.admin.domain.remote.AnalyticsRepository
 import id.neotica.neostore.admin.domain.remote.AuthRepository
 import id.neotica.neostore.admin.domain.remote.CategoriesRepository
@@ -56,6 +57,7 @@ val dataModules = module {
     singleOf(::CollectionsRepositoryImpl).bind(CollectionsRepository::class)
     singleOf(::ContributorsRepositoryImpl).bind(ContributorsRepository::class)
     singleOf(::MetadataScraperImpl).bind(MetadataScraper::class)
+    singleOf(::CacheManager)
     single<AuthRepository> {
         AuthRepositoryImpl(
             get(),

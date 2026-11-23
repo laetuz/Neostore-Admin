@@ -14,18 +14,29 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import id.neotica.neostore.admin.domain.CacheManager
+import id.neotica.neostore.admin.ui.components.ButtonBasic
 import id.neotica.neostore.admin.ui.components.DarkBackground
 import id.neotica.neostore.admin.ui.components.DarkPrimary
 import id.neotica.neostore.admin.ui.components.NeoCardSolid
 import id.neotica.neostore.admin.config.BuildConfig
 import id.neotica.neostore.admin.ui.components.TransparentText40
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 @Composable
-fun InfoView() {
+fun InfoView(cacheManager: CacheManager = koinInject()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -45,6 +56,7 @@ fun InfoView() {
         FeaturesCard()
         TechStackCard()
         AboutCard()
+        CacheCard(cacheManager)
     }
 }
 
@@ -147,6 +159,45 @@ private fun AboutCard() {
             Spacer(modifier = Modifier.height(4.dp))
             InfoRow("Developer", "Neotica")
             InfoRow("Repository", "github.com/laetuz/NeostoreAdmin")
+        }
+    }
+}
+
+@Composable
+private fun CacheCard(cacheManager: CacheManager) {
+    val scope = rememberCoroutineScope()
+    var isClearing by remember { mutableStateOf(false) }
+    var cleared by remember { mutableStateOf(false) }
+
+    NeoCardSolid(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SectionTitle("Cache")
+            Text(
+                text = "Clears cached images/icons (and Wayback version lists) so updates appear immediately.",
+                color = TransparentText40,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            ButtonBasic(if (isClearing) "Clearing..." else "Clear Cache") {
+                if (!isClearing) {
+                    scope.launch {
+                        isClearing = true
+                        cleared = false
+                        withContext(Dispatchers.IO) { cacheManager.clearAll() }
+                        isClearing = false
+                        cleared = true
+                    }
+                }
+            }
+            if (cleared) {
+                Text(
+                    text = "Cache cleared.",
+                    color = Color(0xFF4CAF50),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
     }
 }

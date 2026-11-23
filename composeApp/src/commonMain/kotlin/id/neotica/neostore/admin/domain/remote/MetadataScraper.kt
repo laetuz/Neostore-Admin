@@ -13,5 +13,7 @@ interface MetadataScraper {
 
     suspend fun waybackVersions(packageName: String): Result<List<WaybackVersion>>
 
+    fun clearCache()
+
     suspend fun fetchBytes(url: String): Result<ByteArray>
 }
